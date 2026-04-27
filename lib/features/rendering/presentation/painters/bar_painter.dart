@@ -28,16 +28,19 @@ class BarVisualizerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // ── Background ──────────────────────────────────────────────────
     if (backgroundColor != null) {
-      canvas.drawRect(
-        Offset.zero & size,
-        Paint()..color = backgroundColor!,
-      );
+      canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor!);
     }
 
     if (fftBars.isEmpty) return;
 
-    final barCount = fftBars.length;
-    final totalGapRatio = 0.3; // 30 % of width is gaps
+    // ── Build mirrored data: [reversed(skip first)] + [original] ─────
+    // Left side = reversed FFT (skip first to avoid duplicate center bar),
+    // Right side = original FFT.
+    // This creates a seamless symmetric butterfly spectrum.
+    final mirroredBars = [...fftBars.reversed.skip(1), ...fftBars];
+
+    final barCount = mirroredBars.length;
+    final totalGapRatio = 0.25; // 25 % of width is gaps
     final totalBarWidth = size.width * (1 - totalGapRatio);
     final barWidth = totalBarWidth / barCount;
     final gap = (size.width * totalGapRatio) / (barCount + 1);
@@ -46,26 +49,31 @@ class BarVisualizerPainter extends CustomPainter {
     final cornerRadius = math.min(barWidth * 0.4, 4.0);
 
     for (var i = 0; i < barCount; i++) {
-      final value = fftBars[i].clamp(0.0, 1.0);
+      final value = mirroredBars[i].clamp(0.0, 1.0);
       final barHeight = math.max(value * maxBarHeight, 2.0);
       final x = gap + i * (barWidth + gap);
       final y = baselineY - barHeight;
 
+      // ── Color interpolation based on distance from center ─────────
+      // Bars near center get colorEnd, bars at edges get colorStart.
+      final centerDist = (i - barCount / 2).abs() / (barCount / 2);
+      final barColor = Color.lerp(colorEnd, colorStart, centerDist)!;
+      final barColorOuter = Color.lerp(colorStart, colorEnd, centerDist)!;
+
       // ── Gradient / solid paint ────────────────────────────────────
       final paint = Paint()..style = PaintingStyle.fill;
       if (useGradient) {
-        paint.shader = ui.Gradient.linear(
-          Offset(x, baselineY),
-          Offset(x, y),
-          [colorStart, colorEnd],
-        );
+        paint.shader = ui.Gradient.linear(Offset(x, baselineY), Offset(x, y), [
+          barColorOuter,
+          barColor,
+        ]);
       } else {
-        paint.color = colorStart;
+        paint.color = barColor;
       }
 
       // ── Glow shadow ──────────────────────────────────────────────
       final glowPaint = Paint()
-        ..color = colorStart.withValues(alpha: 0.25 * value)
+        ..color = barColor.withValues(alpha: 0.25 * value)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
       final glowRect = RRect.fromRectAndCorners(
         Rect.fromLTWH(x - 2, y - 2, barWidth + 4, barHeight + 4),
@@ -84,26 +92,13 @@ class BarVisualizerPainter extends CustomPainter {
 
       // ── Mirror reflection ────────────────────────────────────────
       final reflectionHeight = barHeight * 0.35;
-      final reflPaint = Paint()..style = PaintingStyle.fill;
-      if (useGradient) {
-        reflPaint.shader = ui.Gradient.linear(
+      final reflPaint = Paint()
+        ..style = PaintingStyle.fill
+        ..shader = ui.Gradient.linear(
           Offset(x, baselineY),
           Offset(x, baselineY + reflectionHeight),
-          [
-            colorStart.withValues(alpha: 0.25),
-            colorStart.withValues(alpha: 0.0),
-          ],
+          [barColor.withValues(alpha: 0.25), barColor.withValues(alpha: 0.0)],
         );
-      } else {
-        reflPaint.shader = ui.Gradient.linear(
-          Offset(x, baselineY),
-          Offset(x, baselineY + reflectionHeight),
-          [
-            colorStart.withValues(alpha: 0.25),
-            colorStart.withValues(alpha: 0.0),
-          ],
-        );
-      }
       final reflRect = RRect.fromRectAndCorners(
         Rect.fromLTWH(x, baselineY, barWidth, reflectionHeight),
         bottomLeft: Radius.circular(cornerRadius),

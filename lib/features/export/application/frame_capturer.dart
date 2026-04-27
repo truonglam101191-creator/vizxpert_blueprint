@@ -5,12 +5,19 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../overlay/domain/overlay_item.dart';
 import '../../rendering/presentation/painters/bar_painter.dart';
 import '../../rendering/presentation/painters/circular_painter.dart';
+import '../../rendering/presentation/painters/overlay_compositor.dart';
 import '../../workspace/providers/ui_config_provider.dart';
 import '../../audio_processing/application/fft_processor.dart';
 
 /// Captures individual frames to PNG files for offline video rendering.
+///
+/// Renders a complete composited frame including:
+/// 1. Background (color or image)
+/// 2. Audio visualizer (bar/circular)
+/// 3. Overlay items (text, image, shapes)
 class FrameCapturer {
   FrameCapturer({
     required this.config,
@@ -18,6 +25,8 @@ class FrameCapturer {
     required this.fps,
     required this.durationMs,
     required this.outputDir,
+    this.overlayItems = const [],
+    this.backgroundImage,
   });
 
   final UIConfigState config;
@@ -25,6 +34,12 @@ class FrameCapturer {
   final int fps;
   final int durationMs;
   final String outputDir;
+
+  /// Overlay items to render on each frame.
+  final List<OverlayItem> overlayItems;
+
+  /// Optional background image (pre-loaded).
+  final ui.Image? backgroundImage;
 
   /// Total number of frames that will be generated.
   int get totalFrames => (durationMs / 1000.0 * fps).ceil();
@@ -87,11 +102,13 @@ class FrameCapturer {
       Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
     );
 
-    // Create the appropriate painter
-    final CustomPainter painter;
+    final canvasSize = Size(width.toDouble(), height.toDouble());
+
+    // ── 1. Draw visualizer (includes background color) ──────────────
+    final CustomPainter visualizerPainter;
     switch (config.visualizerType) {
       case VisualizerType.bars:
-        painter = BarVisualizerPainter(
+        visualizerPainter = BarVisualizerPainter(
           fftBars: bars,
           colorStart: config.barColorStart,
           colorEnd: config.barColorEnd,
@@ -99,9 +116,8 @@ class FrameCapturer {
           backgroundColor: config.backgroundColor,
         );
       case VisualizerType.circular:
-        // Compute rotation from timestamp for consistent animation
         final rotationAngle = timestampMs / 1000.0 * 0.1;
-        painter = CircularVisualizerPainter(
+        visualizerPainter = CircularVisualizerPainter(
           fftBars: bars,
           colorStart: config.barColorStart,
           colorEnd: config.barColorEnd,
@@ -110,8 +126,17 @@ class FrameCapturer {
           rotationAngle: rotationAngle,
         );
     }
+    visualizerPainter.paint(canvas, canvasSize);
 
-    painter.paint(canvas, Size(width.toDouble(), height.toDouble()));
+    // ── 2. Draw overlay items ───────────────────────────────────────
+    if (overlayItems.isNotEmpty) {
+      final overlayPainter = OverlayCompositorPainter(
+        overlayItems: overlayItems,
+        canvasSize: canvasSize,
+        backgroundImage: backgroundImage,
+      );
+      overlayPainter.paint(canvas, canvasSize);
+    }
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(width, height);

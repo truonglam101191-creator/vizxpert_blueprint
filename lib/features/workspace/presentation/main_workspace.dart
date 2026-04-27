@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -9,11 +10,14 @@ import 'widgets/canvas_preview.dart';
 import 'widgets/properties_panel.dart';
 import 'widgets/sidebar_panel.dart';
 import 'widgets/timeline_panel.dart';
+import 'widgets/workspace_toolbar.dart';
 
 /// Root workspace layout — DAW-style three-column + timeline shell.
 ///
 /// ```
-/// ┌──────────┬──────────────────────┬──────────────┐
+/// ┌────────────────────────────────────────────────┐
+/// │              Toolbar Tray                       │
+/// ├──────────┬──────────────────────┬──────────────┤
 /// │ Sidebar  │   Canvas Preview     │  Properties  │
 /// │          │                      │  Panel       │
 /// ├──────────┴──────────────────────┴──────────────┤
@@ -29,9 +33,7 @@ class MainWorkspace extends ConsumerStatefulWidget {
 
 class _MainWorkspaceState extends ConsumerState<MainWorkspace>
     with TickerProviderStateMixin {
-  double _sidebarWidth = AppConstants.sidebarWidth;
-  double _propertiesWidth = AppConstants.propertiesWidth;
-  double _timelineHeight = AppConstants.timelineHeight;
+  LayoutConfig _layoutConfig = const LayoutConfig();
 
   @override
   void initState() {
@@ -53,6 +55,14 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
         );
   }
 
+  void _applyPreset(LayoutPreset preset) {
+    setState(() => _layoutConfig = LayoutConfig.fromPreset(preset));
+  }
+
+  void _resetLayout() {
+    setState(() => _layoutConfig = const LayoutConfig());
+  }
+
   @override
   Widget build(BuildContext context) {
     // Keep FFT config in sync with UI config
@@ -64,65 +74,111 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
           );
     });
 
-    return Scaffold(
-      backgroundColor: AppColors.scaffold,
-      body: Column(
-        children: [
-          // ── Main area (sidebar + canvas + properties) ─────────────
-          Expanded(
-            child: Row(
-              children: [
-                // ── Sidebar ─────────────────────────────────────────
-                SizedBox(
-                  width: _sidebarWidth,
-                  child: const SidebarPanel(),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () {
+          setState(() => _layoutConfig = _layoutConfig.copyWith(
+                showSidebar: !_layoutConfig.showSidebar,
+              ));
+        },
+        const SingleActivator(LogicalKeyboardKey.digit2, meta: true): () {
+          setState(() => _layoutConfig = _layoutConfig.copyWith(
+                showProperties: !_layoutConfig.showProperties,
+              ));
+        },
+        const SingleActivator(LogicalKeyboardKey.digit3, meta: true): () {
+          setState(() => _layoutConfig = _layoutConfig.copyWith(
+                showTimeline: !_layoutConfig.showTimeline,
+              ));
+        },
+        const SingleActivator(LogicalKeyboardKey.digit0, meta: true): _resetLayout,
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          backgroundColor: AppColors.scaffold,
+          body: Column(
+            children: [
+              // ── Toolbar Tray ──────────────────────────────────────────
+              WorkspaceToolbar(
+                config: _layoutConfig,
+                onConfigChanged: (c) => setState(() => _layoutConfig = c),
+                onPresetSelected: _applyPreset,
+                onResetLayout: _resetLayout,
+              ),
+
+              // ── Main area (sidebar + canvas + properties) ─────────────
+              Expanded(
+                child: Row(
+                  children: [
+                    // ── Sidebar ─────────────────────────────────────────
+                    if (_layoutConfig.showSidebar) ...[
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: _layoutConfig.sidebarWidth,
+                        child: const SidebarPanel(),
+                      ),
+                      _VerticalResizeHandle(
+                        onDrag: (dx) => setState(() {
+                          _layoutConfig = _layoutConfig.copyWith(
+                            sidebarWidth:
+                                (_layoutConfig.sidebarWidth + dx).clamp(
+                              AppConstants.sidebarMinWidth,
+                              AppConstants.sidebarMaxWidth,
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+
+                    // ── Canvas ──────────────────────────────────────────
+                    const Expanded(child: CanvasPreview()),
+
+                    // ── Properties ──────────────────────────────────────
+                    if (_layoutConfig.showProperties) ...[
+                      _VerticalResizeHandle(
+                        onDrag: (dx) => setState(() {
+                          _layoutConfig = _layoutConfig.copyWith(
+                            propertiesWidth:
+                                (_layoutConfig.propertiesWidth - dx).clamp(
+                              AppConstants.propertiesMinWidth,
+                              AppConstants.propertiesMaxWidth,
+                            ),
+                          );
+                        }),
+                      ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: _layoutConfig.propertiesWidth,
+                        child: const PropertiesPanel(),
+                      ),
+                    ],
+                  ],
                 ),
-                _VerticalResizeHandle(
-                  onDrag: (dx) => setState(() {
-                    _sidebarWidth = (_sidebarWidth + dx).clamp(
-                      AppConstants.sidebarMinWidth,
-                      AppConstants.sidebarMaxWidth,
+              ),
+
+              // ── Timeline ──────────────────────────────────────────────
+              if (_layoutConfig.showTimeline) ...[
+                _HorizontalResizeHandle(
+                  onDrag: (dy) => setState(() {
+                    _layoutConfig = _layoutConfig.copyWith(
+                      timelineHeight:
+                          (_layoutConfig.timelineHeight - dy).clamp(
+                        AppConstants.timelineMinHeight,
+                        AppConstants.timelineMaxHeight,
+                      ),
                     );
                   }),
                 ),
-
-                // ── Canvas ──────────────────────────────────────────
-                const Expanded(child: CanvasPreview()),
-
-                _VerticalResizeHandle(
-                  onDrag: (dx) => setState(() {
-                    _propertiesWidth = (_propertiesWidth - dx).clamp(
-                      AppConstants.propertiesMinWidth,
-                      AppConstants.propertiesMaxWidth,
-                    );
-                  }),
-                ),
-
-                // ── Properties ──────────────────────────────────────
-                SizedBox(
-                  width: _propertiesWidth,
-                  child: const PropertiesPanel(),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: _layoutConfig.timelineHeight,
+                  child: const TimelinePanel(),
                 ),
               ],
-            ),
+            ],
           ),
-
-          // ── Horizontal resize handle for timeline ─────────────────
-          _HorizontalResizeHandle(
-            onDrag: (dy) => setState(() {
-              _timelineHeight = (_timelineHeight - dy).clamp(
-                AppConstants.timelineMinHeight,
-                AppConstants.timelineMaxHeight,
-              );
-            }),
-          ),
-
-          // ── Timeline ──────────────────────────────────────────────
-          SizedBox(
-            height: _timelineHeight,
-            child: const TimelinePanel(),
-          ),
-        ],
+        ),
       ),
     );
   }

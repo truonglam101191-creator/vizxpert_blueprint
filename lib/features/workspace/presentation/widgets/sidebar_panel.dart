@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../audio_processing/providers/audio_provider.dart';
 import '../../../export/providers/export_provider.dart';
+import '../../../overlay/domain/shape_overlay.dart';
+import '../../../overlay/providers/overlay_provider.dart';
 import '../../providers/ui_config_provider.dart';
 
-/// Left sidebar: logo, audio import, visualizer mode toggle, export button.
+/// Left sidebar: logo, audio import, overlay tools, visualizer mode, export.
 class SidebarPanel extends ConsumerWidget {
   const SidebarPanel({super.key});
 
@@ -21,6 +23,30 @@ class SidebarPanel extends ConsumerWidget {
       final notifier = ref.read(audioProvider.notifier);
       await notifier.initEngine();
       await notifier.loadFile(result.files.single.path!);
+    }
+  }
+
+  Future<void> _importImage(WidgetRef ref) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.image,
+      dialogTitle: 'Add Image Overlay',
+    );
+    if (result != null && result.files.single.path != null) {
+      ref.read(overlayProvider.notifier).addImage(
+            imagePath: result.files.single.path!,
+          );
+    }
+  }
+
+  Future<void> _setBackgroundImage(WidgetRef ref) async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.image,
+      dialogTitle: 'Set Background Image',
+    );
+    if (result != null && result.files.single.path != null) {
+      ref.read(overlayProvider.notifier).setBackgroundImage(
+            result.files.single.path!,
+          );
     }
   }
 
@@ -108,6 +134,46 @@ class SidebarPanel extends ConsumerWidget {
 
           const Divider(height: 1),
 
+          // ── Overlay Tools Section ─────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'OVERLAY TOOLS',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+
+          _SidebarButton(
+            icon: Icons.text_fields_rounded,
+            label: 'Add Text',
+            onTap: () => ref.read(overlayProvider.notifier).addText(),
+          ),
+          _SidebarButton(
+            icon: Icons.add_photo_alternate_rounded,
+            label: 'Add Image',
+            onTap: () => _importImage(ref),
+          ),
+
+          // Shape submenu
+          _ShapeMenuButton(
+            onShapeSelected: (type) =>
+                ref.read(overlayProvider.notifier).addShape(shapeType: type),
+          ),
+
+          _SidebarButton(
+            icon: Icons.wallpaper_rounded,
+            label: 'Background Image',
+            onTap: () => _setBackgroundImage(ref),
+          ),
+
+          const Divider(height: 1),
+
           // ── Visualizer Mode ──────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -190,8 +256,6 @@ class SidebarPanel extends ConsumerWidget {
             accent: true,
             enabled: audioState.hasFile && !exportState.isExporting,
             onTap: () {
-              // Export will be triggered from ExportOrchestrator
-              // via a dialog or direct call. For now, just a placeholder.
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Export feature ready!')),
               );
@@ -258,6 +322,92 @@ class _SidebarButton extends StatelessWidget {
                         : AppColors.textMuted,
                   ),
                 ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShapeMenuButton extends StatelessWidget {
+  const _ShapeMenuButton({required this.onShapeSelected});
+
+  final ValueChanged<ShapeType> onShapeSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: PopupMenuButton<ShapeType>(
+          onSelected: onShapeSelected,
+          color: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          offset: const Offset(0, 36),
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: ShapeType.rectangle,
+              child: Row(
+                children: [
+                  Icon(Icons.crop_square_rounded, size: 16, color: AppColors.textSecondary),
+                  SizedBox(width: 8),
+                  Text('Rectangle', style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: ShapeType.circle,
+              child: Row(
+                children: [
+                  Icon(Icons.circle_outlined, size: 16, color: AppColors.textSecondary),
+                  SizedBox(width: 8),
+                  Text('Circle', style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: ShapeType.triangle,
+              child: Row(
+                children: [
+                  Icon(Icons.change_history_rounded, size: 16, color: AppColors.textSecondary),
+                  SizedBox(width: 8),
+                  Text('Triangle', style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: ShapeType.line,
+              child: Row(
+                children: [
+                  Icon(Icons.horizontal_rule_rounded, size: 16, color: AppColors.textSecondary),
+                  SizedBox(width: 8),
+                  Text('Line', style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                const Icon(Icons.category_rounded,
+                    size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: 10),
+                Text(
+                  'Add Shape',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(Icons.arrow_drop_down,
+                    size: 16, color: AppColors.textMuted),
               ],
             ),
           ),
