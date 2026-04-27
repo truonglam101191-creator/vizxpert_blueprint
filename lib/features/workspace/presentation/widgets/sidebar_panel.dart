@@ -50,6 +50,32 @@ class SidebarPanel extends ConsumerWidget {
     }
   }
 
+  Future<void> _exportVideo(BuildContext context, WidgetRef ref) async {
+    final audioState = ref.read(audioProvider);
+    if (!audioState.hasFile || audioState.filePath == null) return;
+
+    final result = await FilePicker.saveFile(
+      dialogTitle: 'Save Video Export',
+      fileName: 'vizxpert_export.mp4',
+      type: FileType.custom,
+      allowedExtensions: ['mp4'],
+    );
+
+    if (result != null) {
+      final uiConfig = ref.read(uiConfigProvider);
+      final overlayState = ref.read(overlayProvider);
+      
+      ref.read(exportProvider.notifier).exportVideo(
+            audioPath: audioState.filePath!,
+            durationMs: audioState.duration.inMilliseconds,
+            config: uiConfig,
+            overlayState: overlayState,
+            outputPath: result,
+            fftDataAtTime: null, // Placeholder for now
+          );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final audioState = ref.watch(audioProvider);
@@ -184,12 +210,15 @@ class SidebarPanel extends ConsumerWidget {
                   'VISUALIZER MODE',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 _ModeToggle(
-                  selected: uiConfig.visualizerType,
-                  onChanged: (type) =>
-                      ref.read(uiConfigProvider.notifier).setVisualizerType(type),
+                  // Pass a dummy value since selection doesn't make sense anymore
+                  selected: VisualizerType.bars,
+                  onChanged: (type) {
+                    ref.read(overlayProvider.notifier).addVisualizer(visualizerType: type);
+                  },
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -255,11 +284,7 @@ class SidebarPanel extends ConsumerWidget {
             label: 'Export Video',
             accent: true,
             enabled: audioState.hasFile && !exportState.isExporting,
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Export feature ready!')),
-              );
-            },
+            onTap: () => _exportVideo(context, ref),
           ),
           const SizedBox(height: 12),
         ],

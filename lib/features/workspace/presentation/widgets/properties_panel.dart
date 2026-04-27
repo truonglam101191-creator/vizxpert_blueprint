@@ -7,6 +7,7 @@ import '../../../overlay/domain/overlay_item.dart';
 import '../../../overlay/domain/text_overlay.dart';
 import '../../../overlay/domain/image_overlay.dart';
 import '../../../overlay/domain/shape_overlay.dart';
+import '../../../overlay/domain/visualizer_overlay.dart';
 import '../../../overlay/providers/overlay_provider.dart';
 import '../../providers/ui_config_provider.dart';
 import 'color_picker_widget.dart';
@@ -61,97 +62,6 @@ class PropertiesPanel extends ConsumerWidget {
                   const Divider(height: 1),
                 ],
 
-                // ─── Visualizer section ────────────────────────────
-                PanelSection(
-                  title: 'Visualizer',
-                  child: Column(
-                    children: [
-                      _LabeledSlider(
-                        label: 'Intensity',
-                        value: config.intensity,
-                        min: AppConstants.minIntensity,
-                        max: AppConstants.maxIntensity,
-                        onChanged: notifier.setIntensity,
-                        displayValue: '${(config.intensity * 100).toInt()}%',
-                      ),
-                      const SizedBox(height: 8),
-                      _LabeledSlider(
-                        label: 'Bar Count',
-                        value: config.barCount.toDouble(),
-                        min: AppConstants.minBarCount.toDouble(),
-                        max: AppConstants.maxBarCount.toDouble(),
-                        onChanged: (v) => notifier.setBarCount(v.round()),
-                        displayValue: config.barCount.toString(),
-                      ),
-                      const SizedBox(height: 8),
-                      _LabeledSlider(
-                        label: 'Smoothing',
-                        value: config.smoothing,
-                        min: AppConstants.minSmoothing,
-                        max: AppConstants.maxSmoothing,
-                        onChanged: notifier.setSmoothing,
-                        displayValue: '${(config.smoothing * 100).toInt()}%',
-                      ),
-                      const SizedBox(height: 8),
-                      const Divider(),
-                      const SizedBox(height: 8),
-                      _LabeledSlider(
-                        label: 'Scale',
-                        value: config.visualizerScale,
-                        min: 0.1,
-                        max: 3.0,
-                        onChanged: notifier.setVisualizerScale,
-                        displayValue:
-                            '${(config.visualizerScale * 100).toInt()}%',
-                      ),
-                      const SizedBox(height: 8),
-                      _LabeledSlider(
-                        label: 'Position X',
-                        value: config.visualizerPosition.dx,
-                        min: -1.0,
-                        max: 1.0,
-                        onChanged: (v) => notifier.setVisualizerPosition(
-                          Offset(v, config.visualizerPosition.dy),
-                        ),
-                        displayValue:
-                            '${(config.visualizerPosition.dx * 100).toInt()}%',
-                      ),
-                      const SizedBox(height: 8),
-                      _LabeledSlider(
-                        label: 'Position Y',
-                        value: config.visualizerPosition.dy,
-                        min: -1.0,
-                        max: 1.0,
-                        onChanged: (v) => notifier.setVisualizerPosition(
-                          Offset(config.visualizerPosition.dx, v),
-                        ),
-                        displayValue:
-                            '${(config.visualizerPosition.dy * 100).toInt()}%',
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Text(
-                            'Auto Rotate (Circular)',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const Spacer(),
-                          SizedBox(
-                            height: 24,
-                            child: Switch(
-                              value: config.autoRotate,
-                              onChanged: notifier.setAutoRotate,
-                              activeThumbColor: AppColors.primary,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
                 // ─── Colors section ─────────────────────────────────
                 PanelSection(
                   title: 'Colors',
@@ -161,54 +71,6 @@ class PropertiesPanel extends ConsumerWidget {
                         label: 'Background',
                         currentColor: config.backgroundColor,
                         onColorChanged: (c) => notifier.setBackgroundColor(c),
-                      ),
-                      const SizedBox(height: 14),
-                      ColorPickerWidget(
-                        label: 'Bar Start',
-                        currentColor: config.barColorStart,
-                        onColorChanged: notifier.setBarColorStart,
-                        presets: const {
-                          'Purple': AppColors.primary,
-                          'Coral': AppColors.secondary,
-                          'Cyan': AppColors.cyan,
-                          'Teal': AppColors.teal,
-                          'Gold': Color(0xFFFFD700),
-                          'White': Color(0xFFEEEEEE),
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      ColorPickerWidget(
-                        label: 'Bar End',
-                        currentColor: config.barColorEnd,
-                        onColorChanged: notifier.setBarColorEnd,
-                        presets: const {
-                          'Cyan': AppColors.cyan,
-                          'Purple': AppColors.primary,
-                          'Pink': AppColors.secondary,
-                          'Teal': AppColors.teal,
-                          'Lime': Color(0xFFA8FF00),
-                          'White': Color(0xFFEEEEEE),
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Text(
-                            'Gradient',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const Spacer(),
-                          SizedBox(
-                            height: 24,
-                            child: Switch(
-                              value: config.useGradient,
-                              onChanged: notifier.setUseGradient,
-                              activeThumbColor: AppColors.primary,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -284,6 +146,8 @@ class _OverlayEditorSection extends StatelessWidget {
             _buildImageEditor(context, item as ImageOverlay),
           if (item is ShapeOverlay)
             _buildShapeEditor(context, item as ShapeOverlay),
+          if (item is VisualizerOverlay)
+            _buildVisualizerEditor(context, item as VisualizerOverlay),
 
           const Divider(height: 20),
 
@@ -418,6 +282,8 @@ class _OverlayEditorSection extends StatelessWidget {
         return '🖼 Image Overlay';
       case OverlayType.shape:
         return '🔷 Shape Overlay';
+      case OverlayType.visualizer:
+        return '🌊 Visualizer Overlay';
     }
   }
 
@@ -699,6 +565,121 @@ class _OverlayEditorSection extends StatelessWidget {
             ),
             displayValue: '${shapeItem.borderRadius.toInt()}',
           ),
+      ],
+    );
+  }
+
+  // ── Visualizer editor ────────────────────────────────────────────────────
+
+  Widget _buildVisualizerEditor(
+    BuildContext context,
+    VisualizerOverlay vizItem,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Intensity
+        _LabeledSlider(
+          label: 'Intensity',
+          value: vizItem.intensity,
+          min: AppConstants.minIntensity,
+          max: AppConstants.maxIntensity,
+          onChanged: (v) => overlayNotifier.updateItem(
+            vizItem.id,
+            (item) => (item as VisualizerOverlay).copyWith(intensity: v),
+          ),
+          displayValue: '${(vizItem.intensity * 100).toInt()}%',
+        ),
+        const SizedBox(height: 8),
+
+        // Bar Count
+        _LabeledSlider(
+          label: 'Bar Count',
+          value: vizItem.barCount.toDouble(),
+          min: AppConstants.minBarCount.toDouble(),
+          max: AppConstants.maxBarCount.toDouble(),
+          onChanged: (v) => overlayNotifier.updateItem(
+            vizItem.id,
+            (item) => (item as VisualizerOverlay).copyWith(barCount: v.round()),
+          ),
+          displayValue: vizItem.barCount.toString(),
+        ),
+        const SizedBox(height: 8),
+
+        // Smoothing
+        _LabeledSlider(
+          label: 'Smoothing',
+          value: vizItem.smoothing,
+          min: AppConstants.minSmoothing,
+          max: AppConstants.maxSmoothing,
+          onChanged: (v) => overlayNotifier.updateItem(
+            vizItem.id,
+            (item) => (item as VisualizerOverlay).copyWith(smoothing: v),
+          ),
+          displayValue: '${(vizItem.smoothing * 100).toInt()}%',
+        ),
+        const SizedBox(height: 12),
+
+        // Colors
+        ColorPickerWidget(
+          label: 'Bar Start',
+          currentColor: vizItem.colorStart,
+          onColorChanged: (c) => overlayNotifier.updateItem(
+            vizItem.id,
+            (item) => (item as VisualizerOverlay).copyWith(colorStart: c),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ColorPickerWidget(
+          label: 'Bar End',
+          currentColor: vizItem.colorEnd,
+          onColorChanged: (c) => overlayNotifier.updateItem(
+            vizItem.id,
+            (item) => (item as VisualizerOverlay).copyWith(colorEnd: c),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Text('Gradient', style: Theme.of(context).textTheme.bodySmall),
+            const Spacer(),
+            SizedBox(
+              height: 24,
+              child: Switch(
+                value: vizItem.useGradient,
+                onChanged: (v) => overlayNotifier.updateItem(
+                  vizItem.id,
+                  (item) =>
+                      (item as VisualizerOverlay).copyWith(useGradient: v),
+                ),
+                activeThumbColor: AppColors.primary,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Text(
+              'Auto Rotate (Circular)',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const Spacer(),
+            SizedBox(
+              height: 24,
+              child: Switch(
+                value: vizItem.autoRotate,
+                onChanged: (v) => overlayNotifier.updateItem(
+                  vizItem.id,
+                  (item) => (item as VisualizerOverlay).copyWith(autoRotate: v),
+                ),
+                activeThumbColor: AppColors.primary,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }

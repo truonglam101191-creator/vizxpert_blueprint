@@ -15,8 +15,6 @@ class BarVisualizerPainter extends CustomPainter {
     required this.colorStart,
     required this.colorEnd,
     required this.useGradient,
-    this.backgroundColor,
-    this.backgroundImage,
     this.scale = 1.0,
     this.position = Offset.zero,
   });
@@ -25,35 +23,27 @@ class BarVisualizerPainter extends CustomPainter {
   final Color colorStart;
   final Color colorEnd;
   final bool useGradient;
-  final Color? backgroundColor;
-  final ui.Image? backgroundImage;
   final double scale;
   final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // ── Background ──────────────────────────────────────────────────
-    if (backgroundColor != null) {
-      canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor!);
-    }
-    if (backgroundImage != null) {
-      paintImage(
-        canvas: canvas,
-        rect: Offset.zero & size,
-        image: backgroundImage!,
-        fit: BoxFit.cover,
-      );
-    }
-
     if (fftBars.isEmpty) return;
 
+    // ── APPLY TRANSFORMATIONS ──────────────────────────────────────
     canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.scale(scale);
-    canvas.translate(position.dx * size.width, position.dy * size.height);
-    canvas.translate(-size.width / 2, -size.height / 2);
 
-    // ── Build mirrored data: [reversed_tail] + [original] ─────
+    final absPosition = Offset(
+      position.dx * size.width,
+      position.dy * size.height,
+    );
+    canvas.translate(absPosition.dx, absPosition.dy);
+    final pivot = Offset(size.width / 2, size.height / 2);
+    canvas.translate(pivot.dx, pivot.dy);
+    canvas.scale(scale);
+    canvas.translate(-pivot.dx, -pivot.dy);
+
+    // ── DRAW BARS ──────────────────────────────────────────────────
     // Left side = reversed FFT (without index 0)
     // Right side = original FFT.
     // This creates a seamless symmetric butterfly spectrum with Bass (index 0) in the exact center.

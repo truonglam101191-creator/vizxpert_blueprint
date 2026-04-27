@@ -7,8 +7,6 @@ class SymmetricBarPainter extends CustomPainter {
     required this.colorStart,
     required this.colorEnd,
     required this.useGradient,
-    required this.backgroundColor,
-    this.backgroundImage,
     this.scale = 1.0,
     this.position = Offset.zero,
   });
@@ -17,49 +15,11 @@ class SymmetricBarPainter extends CustomPainter {
   final Color colorStart;
   final Color colorEnd;
   final bool useGradient;
-  final Color backgroundColor;
-  final ui.Image? backgroundImage;
   final double scale;
   final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Draw background color
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = backgroundColor,
-    );
-
-    // 2. Draw background image (if any)
-    if (backgroundImage != null) {
-      final imgWidth = backgroundImage!.width.toDouble();
-      final imgHeight = backgroundImage!.height.toDouble();
-      final imgRatio = imgWidth / imgHeight;
-      final canvasRatio = size.width / size.height;
-
-      double drawWidth, drawHeight;
-      if (imgRatio > canvasRatio) {
-        drawHeight = size.height;
-        drawWidth = size.height * imgRatio;
-      } else {
-        drawWidth = size.width;
-        drawHeight = size.width / imgRatio;
-      }
-
-      final drawRect = Rect.fromCenter(
-        center: Offset(size.width / 2, size.height / 2),
-        width: drawWidth,
-        height: drawHeight,
-      );
-
-      canvas.drawImageRect(
-        backgroundImage!,
-        Rect.fromLTWH(0, 0, imgWidth, imgHeight),
-        drawRect,
-        Paint(),
-      );
-    }
-
     if (fftBars.isEmpty) return;
 
     // ── APPLY TRANSFORMATIONS ──────────────────────────────────────
@@ -135,8 +95,6 @@ class SymmetricBarPainter extends CustomPainter {
         oldDelegate.colorStart != colorStart ||
         oldDelegate.colorEnd != colorEnd ||
         oldDelegate.useGradient != useGradient ||
-        oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.backgroundImage != backgroundImage ||
         oldDelegate.scale != scale ||
         oldDelegate.position != position;
   }

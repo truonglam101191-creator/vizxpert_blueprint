@@ -10,6 +10,7 @@ import '../../../overlay/application/image_cache_service.dart';
 import '../../../overlay/domain/overlay_item.dart';
 import '../../../overlay/presentation/widgets/draggable_overlay.dart';
 import '../../../overlay/providers/overlay_provider.dart';
+import '../../../rendering/presentation/painters/background_painter.dart';
 import '../../../rendering/presentation/painters/overlay_compositor.dart';
 import '../../../rendering/presentation/visualizer_painter.dart';
 import '../../providers/ui_config_provider.dart';
@@ -123,26 +124,26 @@ class _CanvasPreviewState extends ConsumerState<CanvasPreview>
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
                     children: [
-                      // ── Layer 1: Visualizer ──────────────────────
+                      // ── Layer 1: Background ──────────────────────
                       Positioned.fill(
                         child: CustomPaint(
-                          painter: VisualizerPainterFactory.create(
-                            config: uiConfig,
-                            fftBars: fftState.bars,
-                            rotationAngle: uiConfig.autoRotate ? _rotationAngle : 0.0,
+                          painter: BackgroundPainter(
+                            backgroundColor: uiConfig.backgroundColor,
                             backgroundImage: _backgroundImage,
                           ),
                           size: Size.infinite,
                         ),
                       ),
 
-                      // ── Layer 2: Overlay compositor ──────────────
+                      // ── Layer 2: Overlay compositor (including visualizers) ──────────────
                       Positioned.fill(
                         child: CustomPaint(
                           painter: OverlayCompositorPainter(
                             overlayItems: overlayState.sortedItems,
                             canvasSize: canvasSize,
                             selectedItemId: null, // handles drawn by widgets
+                            fftBars: fftState.bars,
+                            timeInSeconds: _rotationAngle * 10.0, // _rotationAngle is driven by ticker, *10 to approximate time
                           ),
                           size: Size.infinite,
                         ),

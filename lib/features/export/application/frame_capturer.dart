@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../overlay/domain/overlay_item.dart';
-import '../../rendering/presentation/visualizer_painter.dart';
+import '../../rendering/presentation/painters/background_painter.dart';
 import '../../rendering/presentation/painters/overlay_compositor.dart';
 import '../../workspace/providers/ui_config_provider.dart';
 import '../../audio_processing/application/fft_processor.dart';
@@ -67,14 +67,14 @@ class FrameCapturer {
 
       // Get FFT data for this timestamp
       final rawFft = fftDataAtTime?.call(timestampMs) ??
-          _generatePlaceholderFFT(timestampMs, config.barCount);
+          _generatePlaceholderFFT(timestampMs, 256);
 
       // Process through pipeline
       final bars = processor.processFrame(
         rawFft: rawFft,
-        barCount: config.barCount,
-        smoothing: config.smoothing,
-        intensity: config.intensity,
+        barCount: 256,
+        smoothing: 0.5,
+        intensity: 1.0,
       );
 
       // Paint to offscreen canvas
@@ -103,20 +103,20 @@ class FrameCapturer {
 
     final canvasSize = Size(width.toDouble(), height.toDouble());
 
-    // ── 1. Draw visualizer (includes background color & image) ──────────────
-    final visualizerPainter = VisualizerPainterFactory.create(
-      config: config,
-      fftBars: bars,
-      rotationAngle: config.autoRotate ? (timestampMs / 1000.0 * 0.1) : 0.0,
+    // ── 1. Draw background color & image ──────────────
+    final bgPainter = BackgroundPainter(
+      backgroundColor: config.backgroundColor,
       backgroundImage: backgroundImage,
     );
-    visualizerPainter.paint(canvas, canvasSize);
+    bgPainter.paint(canvas, canvasSize);
 
-    // ── 2. Draw overlay items ───────────────────────────────────────
+    // ── 2. Draw overlay items (including visualizers) ───────────────────────────────────────
     if (overlayItems.isNotEmpty) {
       final overlayPainter = OverlayCompositorPainter(
         overlayItems: overlayItems,
         canvasSize: canvasSize,
+        fftBars: bars,
+        timeInSeconds: timestampMs / 1000.0,
       );
       overlayPainter.paint(canvas, canvasSize);
     }

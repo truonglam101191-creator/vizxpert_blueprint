@@ -42,17 +42,7 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
     // Start FFT ticker after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(fftProvider.notifier).start(this);
-      _syncFftConfig();
     });
-  }
-
-  void _syncFftConfig() {
-    final config = ref.read(uiConfigProvider);
-    ref.read(fftProvider.notifier).updateConfig(
-          barCount: config.barCount,
-          smoothing: config.smoothing,
-          intensity: config.intensity,
-        );
   }
 
   void _applyPreset(LayoutPreset preset) {
@@ -65,15 +55,6 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
 
   @override
   Widget build(BuildContext context) {
-    // Keep FFT config in sync with UI config
-    ref.listen(uiConfigProvider, (_, next) {
-      ref.read(fftProvider.notifier).updateConfig(
-            barCount: next.barCount,
-            smoothing: next.smoothing,
-            intensity: next.intensity,
-          );
-    });
-
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () {

@@ -40,20 +40,9 @@ class FFTNotifier extends Notifier<FFTState> {
 
   Ticker? _ticker;
   AudioData? _audioData;
-  int _barCount = AppConstants.defaultBarCount;
-  double _smoothing = AppConstants.defaultSmoothing;
-  double _intensity = AppConstants.defaultIntensity;
 
   @override
   FFTState build() => const FFTState();
-
-  // ── Configuration (set by UI) ──────────────────────────────────────
-
-  void updateConfig({int? barCount, double? smoothing, double? intensity}) {
-    if (barCount != null) _barCount = barCount;
-    if (smoothing != null) _smoothing = smoothing;
-    if (intensity != null) _intensity = intensity;
-  }
 
   // ── Ticker control ─────────────────────────────────────────────────
 
@@ -96,9 +85,9 @@ class FFTNotifier extends Notifier<FFTState> {
 
       final bars = _processor.processFrame(
         rawFft: rawFft.toList(),
-        barCount: _barCount,
-        smoothing: _smoothing,
-        intensity: _intensity,
+        barCount: 256,
+        smoothing: 0.5,
+        intensity: 1.0,
       );
 
       state = FFTState(

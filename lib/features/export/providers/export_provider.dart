@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../workspace/providers/ui_config_provider.dart';
+import '../../overlay/providers/overlay_provider.dart';
+import '../application/export_orchestrator.dart';
+
 // ─── State ──────────────────────────────────────────────────────────────────
 
 enum ExportStatus { idle, preparingFrames, encoding, done, error }
@@ -98,6 +102,25 @@ class ExportNotifier extends Notifier<ExportState> {
 
   void reset() {
     state = const ExportState();
+  }
+
+  Future<void> exportVideo({
+    required String audioPath,
+    required int durationMs,
+    required UIConfigState config,
+    required OverlayState overlayState,
+    required String outputPath,
+    List<double> Function(int timestampMs)? fftDataAtTime,
+  }) async {
+    final orchestrator = ExportOrchestrator(exportNotifier: this);
+    await orchestrator.export(
+      audioPath: audioPath,
+      durationMs: durationMs,
+      config: config,
+      overlayState: overlayState,
+      outputPath: outputPath,
+      fftDataAtTime: fftDataAtTime,
+    );
   }
 }
 

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 /// Types of overlay items that can be placed on the canvas.
-enum OverlayType { text, image, shape }
+enum OverlayType {
+  text,
+  image,
+  shape,
+  visualizer,
+}
 
 /// Base model for every overlay item on the canvas.
 ///

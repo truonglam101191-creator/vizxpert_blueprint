@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:path_provider/path_provider.dart';
 
+import '../../overlay/application/image_cache_service.dart';
 import '../../workspace/providers/ui_config_provider.dart';
+import '../../overlay/providers/overlay_provider.dart';
 import '../providers/export_provider.dart';
 import 'ffmpeg_service.dart';
 import 'frame_capturer.dart';
@@ -27,12 +30,14 @@ class ExportOrchestrator {
   /// [audioPath]    – path to the source audio file
   /// [durationMs]   – total duration of the audio in milliseconds
   /// [config]       – current UI config (colors, visualizer type, etc.)
+  /// [overlayState] – current overlay state containing layers and background image
   /// [outputPath]   – where to save the final .mp4
   /// [fftDataAtTime] – optional function to get real FFT data per timestamp
   Future<void> export({
     required String audioPath,
     required int durationMs,
     required UIConfigState config,
+    required OverlayState overlayState,
     required String outputPath,
     List<double> Function(int timestampMs)? fftDataAtTime,
   }) async {
@@ -53,6 +58,13 @@ class ExportOrchestrator {
           '${tempBase.path}/vizxpert_frames_${DateTime.now().millisecondsSinceEpoch}';
       await Directory(framesDir).create(recursive: true);
 
+      // ── 1.5. Preload Background Image ───────────────────────────────
+      ui.Image? bgImage;
+      if (overlayState.backgroundImagePath != null) {
+        bgImage = await ImageCacheService.instance
+            .getImage(overlayState.backgroundImagePath!);
+      }
+
       // ── 2. Capture frames ───────────────────────────────────────────
       final capturer = FrameCapturer(
         config: config,
@@ -60,6 +72,8 @@ class ExportOrchestrator {
         fps: config.fps,
         durationMs: durationMs,
         outputDir: framesDir,
+        overlayItems: overlayState.items,
+        backgroundImage: bgImage,
       );
 
       exportNotifier.startPreparing(capturer.totalFrames);

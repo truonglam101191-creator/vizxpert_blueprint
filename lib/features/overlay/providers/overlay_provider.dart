@@ -2,11 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import '../../workspace/providers/ui_config_provider.dart';
 import '../domain/overlay_item.dart';
 import '../domain/text_overlay.dart';
 import '../domain/image_overlay.dart';
 import '../domain/shape_overlay.dart';
+import '../domain/visualizer_overlay.dart';
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,18 @@ class OverlayNotifier extends Notifier<OverlayState> {
     final item = ShapeOverlay(
       id: _generateId(),
       shapeType: shapeType,
+      zIndex: _nextZIndex(),
+    );
+    state = state.copyWith(
+      items: [...state.items, item],
+      selectedItemId: item.id,
+    );
+  }
+
+  void addVisualizer({VisualizerType visualizerType = VisualizerType.bars}) {
+    final item = VisualizerOverlay(
+      id: _generateId(),
+      visualizerType: visualizerType,
       zIndex: _nextZIndex(),
     );
     state = state.copyWith(

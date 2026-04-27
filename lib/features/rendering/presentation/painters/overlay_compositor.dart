@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -6,7 +6,10 @@ import '../../../overlay/domain/overlay_item.dart';
 import '../../../overlay/domain/text_overlay.dart';
 import '../../../overlay/domain/image_overlay.dart';
 import '../../../overlay/domain/shape_overlay.dart';
+import '../../../overlay/domain/visualizer_overlay.dart';
 import '../../../overlay/application/image_cache_service.dart';
+import '../visualizer_painter.dart';
+import 'dart:math' as math;
 
 /// Paints all overlay items on top of the visualizer canvas.
 ///
@@ -17,11 +20,15 @@ class OverlayCompositorPainter extends CustomPainter {
     required this.overlayItems,
     required this.canvasSize,
     this.selectedItemId,
+    this.fftBars = const [],
+    this.timeInSeconds = 0.0,
   });
 
   final List<OverlayItem> overlayItems;
   final Size canvasSize;
   final String? selectedItemId;
+  final List<double> fftBars;
+  final double timeInSeconds;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -66,6 +73,8 @@ class OverlayCompositorPainter extends CustomPainter {
           _drawImage(canvas, size, item as ImageOverlay, rect);
         case OverlayType.shape:
           _drawShape(canvas, size, item as ShapeOverlay, rect);
+        case OverlayType.visualizer:
+          _drawVisualizer(canvas, size, item as VisualizerOverlay, rect);
       }
 
       if (item.opacity < 1.0) {
@@ -328,5 +337,39 @@ class OverlayCompositorPainter extends CustomPainter {
   bool shouldRepaint(covariant OverlayCompositorPainter oldDelegate) {
     return overlayItems != oldDelegate.overlayItems ||
         selectedItemId != oldDelegate.selectedItemId;
+  }
+  // ── Visualizer ────────────────────────────────────────────────────────────
+
+  void _drawVisualizer(
+    Canvas canvas,
+    Size size,
+    VisualizerOverlay item,
+    Rect rect,
+  ) {
+    // Reverse the parent translation/scale because VisualizerPainters apply their own
+    // transforms internally based on item.position and item.scale!
+    final center = rect.center;
+    // We already translated by center and applied rotation.
+    // However, the VisualizerPainters expect the canvas to be un-translated, 
+    // and they use `position` inside their own `paint` method.
+    // Wait! The previous translation was applied in `paint()` around line 43.
+    // `rect.center` was calculated based on `item.absoluteRect(size)`.
+    
+    // Actually, it's easier to just let VisualizerPainter draw from (0,0) with scale 1.0, 
+    // and let the compositor handle the transforms. 
+    // But VisualizerPainter currently explicitly does:
+    // `canvas.translate(position.dx * size.width, position.dy * size.height)`
+    // So we need to reverse the translation done by the compositor!
+    
+    canvas.restore(); // Undo the `canvas.save()` done in line 37!
+    canvas.save(); // Save again so we don't mess up other overlays
+    
+    // Now canvas is clean (except for global transforms, if any).
+    final painter = VisualizerPainterFactory.create(
+      item: item,
+      fftBars: fftBars,
+      timeInSeconds: timeInSeconds,
+    );
+    painter.paint(canvas, size);
   }
 }

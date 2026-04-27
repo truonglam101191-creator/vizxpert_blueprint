@@ -15,9 +15,7 @@ class CircularVisualizerPainter extends CustomPainter {
     required this.colorStart,
     required this.colorEnd,
     required this.useGradient,
-    required this.backgroundColor,
     this.rotationAngle = 0.0,
-    this.backgroundImage,
     this.scale = 1.0,
     this.position = Offset.zero,
   });
@@ -26,30 +24,12 @@ class CircularVisualizerPainter extends CustomPainter {
   final Color colorStart;
   final Color colorEnd;
   final bool useGradient;
-  final Color? backgroundColor;
   final double rotationAngle;
-  final ui.Image? backgroundImage;
   final double scale;
   final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // ── Background ──────────────────────────────────────────────────
-    if (backgroundColor != null) {
-      canvas.drawRect(
-        Offset.zero & size,
-        Paint()..color = backgroundColor!,
-      );
-    }
-    if (backgroundImage != null) {
-      paintImage(
-        canvas: canvas,
-        rect: Offset.zero & size,
-        image: backgroundImage!,
-        fit: BoxFit.cover,
-      );
-    }
-
     if (fftBars.isEmpty) return;
 
     canvas.save();
