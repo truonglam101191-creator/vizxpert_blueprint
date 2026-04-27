@@ -129,7 +129,8 @@ class _CanvasPreviewState extends ConsumerState<CanvasPreview>
                           painter: VisualizerPainterFactory.create(
                             config: uiConfig,
                             fftBars: fftState.bars,
-                            rotationAngle: _rotationAngle,
+                            rotationAngle: uiConfig.autoRotate ? _rotationAngle : 0.0,
+                            backgroundImage: _backgroundImage,
                           ),
                           size: Size.infinite,
                         ),
@@ -142,7 +143,6 @@ class _CanvasPreviewState extends ConsumerState<CanvasPreview>
                             overlayItems: overlayState.sortedItems,
                             canvasSize: canvasSize,
                             selectedItemId: null, // handles drawn by widgets
-                            backgroundImage: _backgroundImage,
                           ),
                           size: Size.infinite,
                         ),
@@ -151,13 +151,15 @@ class _CanvasPreviewState extends ConsumerState<CanvasPreview>
                       // ── Layer 3: Interactive drag handles ────────
                       ...overlayState.sortedItems
                           .where((item) => item.isVisible)
-                          .map((item) => DraggableOverlay(
-                                key: ValueKey(item.id),
-                                item: item,
-                                canvasSize: canvasSize,
-                                isSelected:
-                                    item.id == overlayState.selectedItemId,
-                              )),
+                          .map(
+                            (item) => DraggableOverlay(
+                              key: ValueKey(item.id),
+                              item: item,
+                              canvasSize: canvasSize,
+                              isSelected:
+                                  item.id == overlayState.selectedItemId,
+                            ),
+                          ),
                     ],
                   ),
                 ),

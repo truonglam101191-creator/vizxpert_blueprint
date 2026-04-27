@@ -16,6 +16,9 @@ class BarVisualizerPainter extends CustomPainter {
     required this.colorEnd,
     required this.useGradient,
     this.backgroundColor,
+    this.backgroundImage,
+    this.scale = 1.0,
+    this.position = Offset.zero,
   });
 
   final List<double> fftBars;
@@ -23,6 +26,9 @@ class BarVisualizerPainter extends CustomPainter {
   final Color colorEnd;
   final bool useGradient;
   final Color? backgroundColor;
+  final ui.Image? backgroundImage;
+  final double scale;
+  final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -30,14 +36,28 @@ class BarVisualizerPainter extends CustomPainter {
     if (backgroundColor != null) {
       canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor!);
     }
+    if (backgroundImage != null) {
+      paintImage(
+        canvas: canvas,
+        rect: Offset.zero & size,
+        image: backgroundImage!,
+        fit: BoxFit.cover,
+      );
+    }
 
     if (fftBars.isEmpty) return;
 
-    // ── Build mirrored data: [reversed(skip first)] + [original] ─────
-    // Left side = reversed FFT (skip first to avoid duplicate center bar),
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(scale);
+    canvas.translate(position.dx * size.width, position.dy * size.height);
+    canvas.translate(-size.width / 2, -size.height / 2);
+
+    // ── Build mirrored data: [reversed_tail] + [original] ─────
+    // Left side = reversed FFT (without index 0)
     // Right side = original FFT.
-    // This creates a seamless symmetric butterfly spectrum.
-    final mirroredBars = [...fftBars.reversed.skip(1), ...fftBars];
+    // This creates a seamless symmetric butterfly spectrum with Bass (index 0) in the exact center.
+    final mirroredBars = [...fftBars.sublist(1).reversed, ...fftBars];
 
     final barCount = mirroredBars.length;
     final totalGapRatio = 0.25; // 25 % of width is gaps
@@ -106,6 +126,7 @@ class BarVisualizerPainter extends CustomPainter {
       );
       canvas.drawRRect(reflRect, reflPaint);
     }
+    canvas.restore();
   }
 
   @override

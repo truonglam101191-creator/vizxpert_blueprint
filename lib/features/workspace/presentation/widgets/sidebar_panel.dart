@@ -425,59 +425,95 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget buildItem(VisualizerType type) {
+      final isSelected = type == selected;
+      IconData icon;
+      String label;
+      switch (type) {
+        case VisualizerType.bars:
+          icon = Icons.equalizer_rounded;
+          label = 'Bars';
+          break;
+        case VisualizerType.circular:
+          icon = Icons.donut_large_rounded;
+          label = 'Circular';
+          break;
+        case VisualizerType.symmetricBars:
+          icon = Icons.graphic_eq_rounded;
+          label = 'Symmetric';
+          break;
+        case VisualizerType.wave:
+          icon = Icons.waves_rounded;
+          label = 'Wave';
+          break;
+      }
+
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => onChanged(type),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primary.withValues(alpha: 0.2)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(6),
+              border: isSelected
+                  ? Border.all(color: AppColors.primary.withValues(alpha: 0.4))
+                  : Border.all(color: Colors.transparent),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? AppColors.textPrimary
+                        : AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        children: VisualizerType.values.map((type) {
-          final isSelected = type == selected;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(type),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.2)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(6),
-                  border: isSelected
-                      ? Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.4))
-                      : null,
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      type == VisualizerType.bars
-                          ? Icons.equalizer_rounded
-                          : Icons.donut_large_rounded,
-                      size: 18,
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.textMuted,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      type == VisualizerType.bars ? 'Bars' : 'Circular',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected
-                            ? AppColors.textPrimary
-                            : AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      child: Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                buildItem(VisualizerType.bars),
+                const SizedBox(width: 4),
+                buildItem(VisualizerType.circular),
+              ],
             ),
-          );
-        }).toList(),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                buildItem(VisualizerType.symmetricBars),
+                const SizedBox(width: 4),
+                buildItem(VisualizerType.wave),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

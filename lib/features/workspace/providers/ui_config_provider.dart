@@ -6,7 +6,12 @@ import '../../../core/utils/app_constants.dart';
 
 // ─── Visualizer Type ────────────────────────────────────────────────────────
 
-enum VisualizerType { bars, circular }
+enum VisualizerType {
+  bars,
+  circular,
+  symmetricBars,
+  wave,
+}
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -24,6 +29,9 @@ class UIConfigState {
     this.resolution = AppConstants.defaultResolution,
     this.fps = AppConstants.defaultFps,
     this.backgroundPresetKey = 'Midnight',
+    this.visualizerScale = 1.0,
+    this.visualizerPosition = Offset.zero,
+    this.autoRotate = true,
   });
 
   final VisualizerType visualizerType;
@@ -37,6 +45,9 @@ class UIConfigState {
   final Size resolution;
   final int fps;
   final String backgroundPresetKey;
+  final double visualizerScale;
+  final Offset visualizerPosition;
+  final bool autoRotate;
 
   UIConfigState copyWith({
     VisualizerType? visualizerType,
@@ -50,6 +61,9 @@ class UIConfigState {
     Size? resolution,
     int? fps,
     String? backgroundPresetKey,
+    double? visualizerScale,
+    Offset? visualizerPosition,
+    bool? autoRotate,
   }) {
     return UIConfigState(
       visualizerType: visualizerType ?? this.visualizerType,
@@ -63,6 +77,9 @@ class UIConfigState {
       resolution: resolution ?? this.resolution,
       fps: fps ?? this.fps,
       backgroundPresetKey: backgroundPresetKey ?? this.backgroundPresetKey,
+      visualizerScale: visualizerScale ?? this.visualizerScale,
+      visualizerPosition: visualizerPosition ?? this.visualizerPosition,
+      autoRotate: autoRotate ?? this.autoRotate,
     );
   }
 }
@@ -82,7 +99,8 @@ class UIConfigNotifier extends Notifier<UIConfigState> {
 
   void setSmoothing(double v) => state = state.copyWith(smoothing: v);
 
-  void setBackgroundColor(Color c, {String? presetKey}) => state = state.copyWith(
+  void setBackgroundColor(Color c, {String? presetKey}) =>
+      state = state.copyWith(
         backgroundColor: c,
         backgroundPresetKey: presetKey ?? state.backgroundPresetKey,
       );
@@ -95,9 +113,18 @@ class UIConfigNotifier extends Notifier<UIConfigState> {
   void setResolution(Size r) => state = state.copyWith(resolution: r);
 
   void setFps(int v) => state = state.copyWith(fps: v);
+
+  void setVisualizerScale(double v) =>
+      state = state.copyWith(visualizerScale: v);
+
+  void setVisualizerPosition(Offset v) =>
+      state = state.copyWith(visualizerPosition: v);
+
+  void setAutoRotate(bool v) => state = state.copyWith(autoRotate: v);
 }
 
 // ─── Provider ───────────────────────────────────────────────────────────────
 
-final uiConfigProvider =
-    NotifierProvider<UIConfigNotifier, UIConfigState>(UIConfigNotifier.new);
+final uiConfigProvider = NotifierProvider<UIConfigNotifier, UIConfigState>(
+  UIConfigNotifier.new,
+);

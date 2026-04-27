@@ -32,8 +32,11 @@ class PropertiesPanel extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                const Icon(Icons.tune_rounded,
-                    size: 16, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.tune_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'PROPERTIES',
@@ -69,8 +72,7 @@ class PropertiesPanel extends ConsumerWidget {
                         min: AppConstants.minIntensity,
                         max: AppConstants.maxIntensity,
                         onChanged: notifier.setIntensity,
-                        displayValue:
-                            '${(config.intensity * 100).toInt()}%',
+                        displayValue: '${(config.intensity * 100).toInt()}%',
                       ),
                       const SizedBox(height: 8),
                       _LabeledSlider(
@@ -88,8 +90,63 @@ class PropertiesPanel extends ConsumerWidget {
                         min: AppConstants.minSmoothing,
                         max: AppConstants.maxSmoothing,
                         onChanged: notifier.setSmoothing,
+                        displayValue: '${(config.smoothing * 100).toInt()}%',
+                      ),
+                      const SizedBox(height: 8),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      _LabeledSlider(
+                        label: 'Scale',
+                        value: config.visualizerScale,
+                        min: 0.1,
+                        max: 3.0,
+                        onChanged: notifier.setVisualizerScale,
                         displayValue:
-                            '${(config.smoothing * 100).toInt()}%',
+                            '${(config.visualizerScale * 100).toInt()}%',
+                      ),
+                      const SizedBox(height: 8),
+                      _LabeledSlider(
+                        label: 'Position X',
+                        value: config.visualizerPosition.dx,
+                        min: -1.0,
+                        max: 1.0,
+                        onChanged: (v) => notifier.setVisualizerPosition(
+                          Offset(v, config.visualizerPosition.dy),
+                        ),
+                        displayValue:
+                            '${(config.visualizerPosition.dx * 100).toInt()}%',
+                      ),
+                      const SizedBox(height: 8),
+                      _LabeledSlider(
+                        label: 'Position Y',
+                        value: config.visualizerPosition.dy,
+                        min: -1.0,
+                        max: 1.0,
+                        onChanged: (v) => notifier.setVisualizerPosition(
+                          Offset(config.visualizerPosition.dx, v),
+                        ),
+                        displayValue:
+                            '${(config.visualizerPosition.dy * 100).toInt()}%',
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Text(
+                            'Auto Rotate (Circular)',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            height: 24,
+                            child: Switch(
+                              value: config.autoRotate,
+                              onChanged: notifier.setAutoRotate,
+                              activeThumbColor: AppColors.primary,
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -103,8 +160,7 @@ class PropertiesPanel extends ConsumerWidget {
                       ColorPickerWidget(
                         label: 'Background',
                         currentColor: config.backgroundColor,
-                        onColorChanged: (c) =>
-                            notifier.setBackgroundColor(c),
+                        onColorChanged: (c) => notifier.setBackgroundColor(c),
                       ),
                       const SizedBox(height: 14),
                       ColorPickerWidget(
@@ -137,8 +193,10 @@ class PropertiesPanel extends ConsumerWidget {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          Text('Gradient',
-                              style: Theme.of(context).textTheme.bodySmall),
+                          Text(
+                            'Gradient',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                           const Spacer(),
                           SizedBox(
                             height: 24,
@@ -164,14 +222,14 @@ class PropertiesPanel extends ConsumerWidget {
                       _LabeledDropdown<String>(
                         label: 'Resolution',
                         value: AppConstants.resolutionPresets.entries
-                            .firstWhere(
-                                (e) => e.value == config.resolution)
+                            .firstWhere((e) => e.value == config.resolution)
                             .key,
                         items: AppConstants.resolutionPresets.keys.toList(),
                         onChanged: (key) {
                           if (key != null) {
                             notifier.setResolution(
-                                AppConstants.resolutionPresets[key]!);
+                              AppConstants.resolutionPresets[key]!,
+                            );
                           }
                         },
                       ),
@@ -220,13 +278,60 @@ class _OverlayEditorSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Type-specific controls
-          if (item is TextOverlay) _buildTextEditor(context, item as TextOverlay),
-          if (item is ImageOverlay) _buildImageEditor(context, item as ImageOverlay),
-          if (item is ShapeOverlay) _buildShapeEditor(context, item as ShapeOverlay),
+          if (item is TextOverlay)
+            _buildTextEditor(context, item as TextOverlay),
+          if (item is ImageOverlay)
+            _buildImageEditor(context, item as ImageOverlay),
+          if (item is ShapeOverlay)
+            _buildShapeEditor(context, item as ShapeOverlay),
 
           const Divider(height: 20),
 
           // ── Common transform controls ──────────────────────────────
+          _LabeledSlider(
+            label: 'Position X',
+            value: item.position.dx,
+            min: 0.0,
+            max: 1.0,
+            onChanged: (v) => overlayNotifier.updatePosition(
+              item.id,
+              Offset(v, item.position.dy),
+            ),
+            displayValue: '${(item.position.dx * 100).toInt()}%',
+          ),
+          const SizedBox(height: 6),
+          _LabeledSlider(
+            label: 'Position Y',
+            value: item.position.dy,
+            min: 0.0,
+            max: 1.0,
+            onChanged: (v) => overlayNotifier.updatePosition(
+              item.id,
+              Offset(item.position.dx, v),
+            ),
+            displayValue: '${(item.position.dy * 100).toInt()}%',
+          ),
+          const SizedBox(height: 6),
+          _LabeledSlider(
+            label: 'Width',
+            value: item.size.width,
+            min: 0.01,
+            max: 1.0,
+            onChanged: (v) =>
+                overlayNotifier.updateSize(item.id, Size(v, item.size.height)),
+            displayValue: '${(item.size.width * 100).toInt()}%',
+          ),
+          const SizedBox(height: 6),
+          _LabeledSlider(
+            label: 'Height',
+            value: item.size.height,
+            min: 0.01,
+            max: 1.0,
+            onChanged: (v) =>
+                overlayNotifier.updateSize(item.id, Size(item.size.width, v)),
+            displayValue: '${(item.size.height * 100).toInt()}%',
+          ),
+          const SizedBox(height: 6),
           _LabeledSlider(
             label: 'Opacity',
             value: item.opacity,
@@ -280,7 +385,9 @@ class _OverlayEditorSection extends StatelessWidget {
                 onTap: () => overlayNotifier.toggleVisibility(item.id),
               ),
               _MiniIconButton(
-                icon: item.isLocked ? Icons.lock_rounded : Icons.lock_open_rounded,
+                icon: item.isLocked
+                    ? Icons.lock_rounded
+                    : Icons.lock_open_rounded,
                 tooltip: item.isLocked ? 'Unlock' : 'Lock',
                 onTap: () => overlayNotifier.toggleLock(item.id),
               ),
@@ -331,7 +438,10 @@ class _OverlayEditorSection extends StatelessWidget {
           maxLines: 3,
           decoration: InputDecoration(
             labelText: 'Text',
-            labelStyle: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            labelStyle: const TextStyle(
+              fontSize: 11,
+              color: AppColors.textMuted,
+            ),
             filled: true,
             fillColor: AppColors.surface,
             border: OutlineInputBorder(
@@ -348,8 +458,14 @@ class _OverlayEditorSection extends StatelessWidget {
           label: 'Font',
           value: textItem.fontFamily,
           items: const [
-            'Inter', 'Roboto', 'Montserrat', 'Playfair Display',
-            'Poppins', 'Outfit', 'Lato', 'Oswald',
+            'Inter',
+            'Roboto',
+            'Montserrat',
+            'Playfair Display',
+            'Poppins',
+            'Outfit',
+            'Lato',
+            'Oswald',
           ],
           onChanged: (v) {
             if (v != null) {
@@ -451,12 +567,19 @@ class _OverlayEditorSection extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const Icon(Icons.image_rounded, size: 14, color: AppColors.textMuted),
+              const Icon(
+                Icons.image_rounded,
+                size: 14,
+                color: AppColors.textMuted,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   imageItem.imagePath.split('/').last,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -593,11 +716,16 @@ class _OverlayEditorSection extends StatelessWidget {
 
   static FontWeight _fontWeightFromLabel(String label) {
     switch (label) {
-      case 'Light': return FontWeight.w300;
-      case 'Medium': return FontWeight.w500;
-      case 'Bold': return FontWeight.w700;
-      case 'Black': return FontWeight.w900;
-      default: return FontWeight.w400;
+      case 'Light':
+        return FontWeight.w300;
+      case 'Medium':
+        return FontWeight.w500;
+      case 'Bold':
+        return FontWeight.w700;
+      case 'Black':
+        return FontWeight.w900;
+      default:
+        return FontWeight.w400;
     }
   }
 }
@@ -668,10 +796,9 @@ class _LabeledSlider extends StatelessWidget {
               ),
               child: Text(
                 displayValue,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.copyWith(color: AppColors.textPrimary),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: AppColors.textPrimary),
               ),
             ),
           ],
@@ -721,22 +848,23 @@ class _LabeledDropdown<T> extends StatelessWidget {
             child: DropdownButton<T>(
               value: value,
               items: items
-                  .map((e) => DropdownMenuItem<T>(
-                        value: e,
-                        child: Text(
-                          e.toString(),
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ))
+                  .map(
+                    (e) => DropdownMenuItem<T>(
+                      value: e,
+                      child: Text(
+                        e.toString(),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  )
                   .toList(),
               onChanged: onChanged,
               dropdownColor: AppColors.surface,
               iconSize: 14,
               isDense: true,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: AppColors.textPrimary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
             ),
           ),
         ),

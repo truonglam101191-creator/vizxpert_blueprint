@@ -45,9 +45,9 @@ abstract final class AppConstants {
   static const double propertiesMinWidth = 240.0;
   static const double propertiesMaxWidth = 400.0;
 
-  static const double timelineHeight = 130.0;
-  static const double timelineMinHeight = 80.0;
-  static const double timelineMaxHeight = 200.0;
+  static const double timelineHeight = 200.0;
+  static const double timelineMinHeight = 120.0;
+  static const double timelineMaxHeight = 350.0;
 
   static const double panelBorderWidth = 1.0;
   static const double resizeHandleWidth = 6.0;

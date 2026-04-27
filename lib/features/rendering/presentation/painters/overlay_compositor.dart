@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -18,21 +17,14 @@ class OverlayCompositorPainter extends CustomPainter {
     required this.overlayItems,
     required this.canvasSize,
     this.selectedItemId,
-    this.backgroundImage,
   });
 
   final List<OverlayItem> overlayItems;
   final Size canvasSize;
   final String? selectedItemId;
-  final ui.Image? backgroundImage;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // ── Background image (if any) ───────────────────────────────────
-    if (backgroundImage != null) {
-      _drawBackgroundImage(canvas, size, backgroundImage!);
-    }
-
     // ── Overlay items sorted by zIndex ──────────────────────────────
     final sorted = List<OverlayItem>.from(overlayItems);
     sorted.sort((a, b) => a.zIndex.compareTo(b.zIndex));
@@ -56,9 +48,13 @@ class OverlayCompositorPainter extends CustomPainter {
       if (item.opacity < 1.0) {
         canvas.saveLayer(
           rect.inflate(20),
-          Paint()..color = Color.fromARGB(
-            (item.opacity * 255).round(), 255, 255, 255,
-          ),
+          Paint()
+            ..color = Color.fromARGB(
+              (item.opacity * 255).round(),
+              255,
+              255,
+              255,
+            ),
         );
       }
 
@@ -153,8 +149,9 @@ class OverlayCompositorPainter extends CustomPainter {
   // ── Image ────────────────────────────────────────────────────────────────
 
   void _drawImage(Canvas canvas, Size size, ImageOverlay item, Rect rect) {
-    final cachedImage =
-        ImageCacheService.instance.getCachedImage(item.imagePath);
+    final cachedImage = ImageCacheService.instance.getCachedImage(
+      item.imagePath,
+    );
     if (cachedImage == null) {
       // Draw placeholder while loading
       final placeholderPaint = Paint()
@@ -170,10 +167,7 @@ class OverlayCompositorPainter extends CustomPainter {
       }
       // Icon
       final iconPainter = TextPainter(
-        text: const TextSpan(
-          text: '🖼',
-          style: TextStyle(fontSize: 24),
-        ),
+        text: const TextSpan(text: '🖼', style: TextStyle(fontSize: 24)),
         textDirection: TextDirection.ltr,
       )..layout();
       iconPainter.paint(
@@ -193,7 +187,8 @@ class OverlayCompositorPainter extends CustomPainter {
 
     // Draw image fitted to rect
     final src = Rect.fromLTWH(
-      0, 0,
+      0,
+      0,
       cachedImage.width.toDouble(),
       cachedImage.height.toDouble(),
     );
@@ -235,7 +230,8 @@ class OverlayCompositorPainter extends CustomPainter {
       case ShapeType.rectangle:
         if (item.borderRadius > 0) {
           final rrect = RRect.fromRectAndRadius(
-            rect, Radius.circular(item.borderRadius),
+            rect,
+            Radius.circular(item.borderRadius),
           );
           canvas.drawRRect(rrect, fillPaint);
           canvas.drawRRect(rrect, strokePaint);
@@ -263,16 +259,6 @@ class OverlayCompositorPainter extends CustomPainter {
         canvas.drawPath(path, fillPaint);
         canvas.drawPath(path, strokePaint);
     }
-  }
-
-  // ── Background image ─────────────────────────────────────────────────────
-
-  void _drawBackgroundImage(Canvas canvas, Size size, ui.Image image) {
-    final src = Rect.fromLTWH(
-      0, 0, image.width.toDouble(), image.height.toDouble(),
-    );
-    final dst = Offset.zero & size;
-    canvas.drawImageRect(image, src, dst, Paint());
   }
 
   // ── Selection handles ────────────────────────────────────────────────────
@@ -326,11 +312,7 @@ class OverlayCompositorPainter extends CustomPainter {
       Offset(rect.right, rect.center.dy),
     ];
     for (final mid in midEdges) {
-      final handleRect = Rect.fromCenter(
-        center: mid,
-        width: 6,
-        height: 6,
-      );
+      final handleRect = Rect.fromCenter(center: mid, width: 6, height: 6);
       canvas.drawRRect(
         RRect.fromRectAndRadius(handleRect, const Radius.circular(1)),
         handlePaint,
@@ -345,7 +327,6 @@ class OverlayCompositorPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant OverlayCompositorPainter oldDelegate) {
     return overlayItems != oldDelegate.overlayItems ||
-        selectedItemId != oldDelegate.selectedItemId ||
-        backgroundImage != oldDelegate.backgroundImage;
+        selectedItemId != oldDelegate.selectedItemId;
   }
 }

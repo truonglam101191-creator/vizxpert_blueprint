@@ -53,8 +53,9 @@ class OverlayState {
   }) {
     return OverlayState(
       items: items ?? this.items,
-      selectedItemId:
-          clearSelection ? null : (selectedItemId ?? this.selectedItemId),
+      selectedItemId: clearSelection
+          ? null
+          : (selectedItemId ?? this.selectedItemId),
       backgroundImagePath: clearBackground
           ? null
           : (backgroundImagePath ?? this.backgroundImagePath),
@@ -124,8 +125,7 @@ class OverlayNotifier extends Notifier<OverlayState> {
     final newItems = state.items.where((e) => e.id != id).toList();
     state = OverlayState(
       items: newItems,
-      selectedItemId:
-          state.selectedItemId == id ? null : state.selectedItemId,
+      selectedItemId: state.selectedItemId == id ? null : state.selectedItemId,
       backgroundImagePath: state.backgroundImagePath,
     );
   }
@@ -137,6 +137,23 @@ class OverlayNotifier extends Notifier<OverlayState> {
       if (item.id == id) return updater(item);
       return item;
     }).toList();
+    state = state.copyWith(items: newItems);
+  }
+
+  void reorderItems(int oldIndex, int newIndex) {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final sorted = List<OverlayItem>.from(state.sortedItems);
+    final item = sorted.removeAt(oldIndex);
+    sorted.insert(newIndex, item);
+
+    // Update zIndex for all items based on new order
+    final newItems = state.items.map((e) {
+      final newZIndex = sorted.indexWhere((s) => s.id == e.id);
+      return e.copyWith(zIndex: newZIndex);
+    }).toList();
+
     state = state.copyWith(items: newItems);
   }
 
@@ -239,5 +256,6 @@ class OverlayNotifier extends Notifier<OverlayState> {
 
 // ─── Provider ───────────────────────────────────────────────────────────────
 
-final overlayProvider =
-    NotifierProvider<OverlayNotifier, OverlayState>(OverlayNotifier.new);
+final overlayProvider = NotifierProvider<OverlayNotifier, OverlayState>(
+  OverlayNotifier.new,
+);

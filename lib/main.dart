@@ -7,11 +7,7 @@ import 'features/workspace/presentation/main_workspace.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(
-    const ProviderScope(
-      child: VizXpertApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: VizXpertApp()));
 }
 
 class VizXpertApp extends StatelessWidget {

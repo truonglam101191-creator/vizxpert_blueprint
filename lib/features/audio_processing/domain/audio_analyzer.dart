@@ -44,8 +44,14 @@ class AudioAnalyzer {
       return (bass: <double>[], mid: <double>[], high: <double>[]);
     }
     final hzPerBin = (sampleRate / 2) / binCount;
-    final bassEnd = (AppConstants.bassCutoff / hzPerBin).round().clamp(0, binCount);
-    final midEnd = (AppConstants.midCutoff / hzPerBin).round().clamp(0, binCount);
+    final bassEnd = (AppConstants.bassCutoff / hzPerBin).round().clamp(
+      0,
+      binCount,
+    );
+    final midEnd = (AppConstants.midCutoff / hzPerBin).round().clamp(
+      0,
+      binCount,
+    );
 
     return (
       bass: fft.sublist(0, bassEnd),
@@ -77,20 +83,24 @@ class AudioAnalyzer {
 
   // ─── Resampling ─────────────────────────────────────────────────────
 
-  /// Down-samples (or up-samples) [data] to exactly [targetBars] values
-  /// using simple linear interpolation.
+  /// Down-samples (or up-samples) [data] to exactly [targetBars] values.
+  /// When down-sampling, it uses max pooling to preserve frequency peaks.
   List<double> resampleBands(List<double> data, int targetBars) {
     if (data.isEmpty) return List<double>.filled(targetBars, 0.0);
     if (data.length == targetBars) return List<double>.from(data);
 
     final result = List<double>.filled(targetBars, 0.0);
     final ratio = data.length / targetBars;
+
     for (var i = 0; i < targetBars; i++) {
-      final pos = i * ratio;
-      final low = pos.floor().clamp(0, data.length - 1);
-      final high = (low + 1).clamp(0, data.length - 1);
-      final t = pos - low;
-      result[i] = data[low] * (1.0 - t) + data[high] * t;
+      final start = (i * ratio).floor().clamp(0, data.length - 1);
+      final end = ((i + 1) * ratio).floor().clamp(start + 1, data.length);
+
+      double maxVal = 0.0;
+      for (var j = start; j < end; j++) {
+        if (data[j] > maxVal) maxVal = data[j];
+      }
+      result[i] = maxVal;
     }
     return result;
   }
@@ -102,7 +112,14 @@ class AudioAnalyzer {
   /// Smoothing is handled externally by the caller who holds the previous
   /// frame reference.
   List<double> processRaw(List<double> rawFft, {required int barCount}) {
-    final normalised = normalizeFFT(rawFft);
+    if (rawFft.isEmpty) return List.filled(barCount, 0.0);
+
+    // Only use the first ~72% of the FFT bins (up to ~16kHz)
+    // to prevent large empty gaps at the high-frequency end.
+    final usableLength = (rawFft.length * 0.72).toInt().clamp(1, rawFft.length);
+    final slicedFft = rawFft.sublist(0, usableLength);
+
+    final normalised = normalizeFFT(slicedFft);
     return resampleBands(normalised, barCount);
   }
 }

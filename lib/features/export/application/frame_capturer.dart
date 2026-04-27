@@ -6,8 +6,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../overlay/domain/overlay_item.dart';
-import '../../rendering/presentation/painters/bar_painter.dart';
-import '../../rendering/presentation/painters/circular_painter.dart';
+import '../../rendering/presentation/visualizer_painter.dart';
 import '../../rendering/presentation/painters/overlay_compositor.dart';
 import '../../workspace/providers/ui_config_provider.dart';
 import '../../audio_processing/application/fft_processor.dart';
@@ -104,28 +103,13 @@ class FrameCapturer {
 
     final canvasSize = Size(width.toDouble(), height.toDouble());
 
-    // ── 1. Draw visualizer (includes background color) ──────────────
-    final CustomPainter visualizerPainter;
-    switch (config.visualizerType) {
-      case VisualizerType.bars:
-        visualizerPainter = BarVisualizerPainter(
-          fftBars: bars,
-          colorStart: config.barColorStart,
-          colorEnd: config.barColorEnd,
-          useGradient: config.useGradient,
-          backgroundColor: config.backgroundColor,
-        );
-      case VisualizerType.circular:
-        final rotationAngle = timestampMs / 1000.0 * 0.1;
-        visualizerPainter = CircularVisualizerPainter(
-          fftBars: bars,
-          colorStart: config.barColorStart,
-          colorEnd: config.barColorEnd,
-          useGradient: config.useGradient,
-          backgroundColor: config.backgroundColor,
-          rotationAngle: rotationAngle,
-        );
-    }
+    // ── 1. Draw visualizer (includes background color & image) ──────────────
+    final visualizerPainter = VisualizerPainterFactory.create(
+      config: config,
+      fftBars: bars,
+      rotationAngle: config.autoRotate ? (timestampMs / 1000.0 * 0.1) : 0.0,
+      backgroundImage: backgroundImage,
+    );
     visualizerPainter.paint(canvas, canvasSize);
 
     // ── 2. Draw overlay items ───────────────────────────────────────
@@ -133,7 +117,6 @@ class FrameCapturer {
       final overlayPainter = OverlayCompositorPainter(
         overlayItems: overlayItems,
         canvasSize: canvasSize,
-        backgroundImage: backgroundImage,
       );
       overlayPainter.paint(canvas, canvasSize);
     }

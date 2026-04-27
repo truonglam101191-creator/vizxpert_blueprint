@@ -15,8 +15,11 @@ class CircularVisualizerPainter extends CustomPainter {
     required this.colorStart,
     required this.colorEnd,
     required this.useGradient,
-    this.backgroundColor,
+    required this.backgroundColor,
     this.rotationAngle = 0.0,
+    this.backgroundImage,
+    this.scale = 1.0,
+    this.position = Offset.zero,
   });
 
   final List<double> fftBars;
@@ -25,6 +28,9 @@ class CircularVisualizerPainter extends CustomPainter {
   final bool useGradient;
   final Color? backgroundColor;
   final double rotationAngle;
+  final ui.Image? backgroundImage;
+  final double scale;
+  final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -35,19 +41,36 @@ class CircularVisualizerPainter extends CustomPainter {
         Paint()..color = backgroundColor!,
       );
     }
+    if (backgroundImage != null) {
+      paintImage(
+        canvas: canvas,
+        rect: Offset.zero & size,
+        image: backgroundImage!,
+        fit: BoxFit.cover,
+      );
+    }
 
     if (fftBars.isEmpty) return;
+
+    canvas.save();
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(scale);
+    canvas.translate(position.dx * size.width, position.dy * size.height);
+    canvas.translate(-size.width / 2, -size.height / 2);
+
+    // ── Build mirrored data for seamless circle ─────────────────────
+    final mirroredBars = [...fftBars.sublist(1).reversed, ...fftBars];
 
     final centre = Offset(size.width / 2, size.height / 2);
     final minSide = math.min(size.width, size.height);
     final innerRadius = minSide * 0.12;
     final maxBarLength = minSide * 0.30;
-    final barCount = fftBars.length;
+    final barCount = mirroredBars.length;
     final angleStep = (2 * math.pi) / barCount;
 
     // Average energy for pulse
     final avgEnergy =
-        fftBars.fold<double>(0.0, (sum, v) => sum + v) / barCount;
+        fftBars.fold<double>(0.0, (sum, v) => sum + v) / fftBars.length;
 
     // ── Centre glow ─────────────────────────────────────────────────
     final glowPaint = Paint()
@@ -75,7 +98,7 @@ class CircularVisualizerPainter extends CustomPainter {
 
     // ── Bars ────────────────────────────────────────────────────────
     for (var i = 0; i < barCount; i++) {
-      final value = fftBars[i].clamp(0.0, 1.0);
+      final value = mirroredBars[i].clamp(0.0, 1.0);
       final barLength = math.max(value * maxBarLength, 1.5);
       final angle = i * angleStep + rotationAngle;
 
@@ -118,6 +141,8 @@ class CircularVisualizerPainter extends CustomPainter {
         barPaint,
       );
     }
+    
+    canvas.restore();
   }
 
   @override
