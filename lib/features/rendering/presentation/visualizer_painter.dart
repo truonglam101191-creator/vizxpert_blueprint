@@ -38,8 +38,6 @@ abstract final class VisualizerPainterFactory {
           colorStart: item.colorStart,
           colorEnd: item.colorEnd,
           useGradient: item.useGradient,
-          scale: item.size.width,
-          position: item.position,
         );
       case VisualizerType.circular:
         return CircularVisualizerPainter(
@@ -48,8 +46,6 @@ abstract final class VisualizerPainterFactory {
           colorEnd: item.colorEnd,
           useGradient: item.useGradient,
           rotationAngle: rotationAngle,
-          scale: item.size.width,
-          position: item.position,
         );
       case VisualizerType.symmetricBars:
         return SymmetricBarPainter(
@@ -57,8 +53,6 @@ abstract final class VisualizerPainterFactory {
           colorStart: item.colorStart,
           colorEnd: item.colorEnd,
           useGradient: item.useGradient,
-          scale: item.size.width,
-          position: item.position,
         );
       case VisualizerType.wave:
         return WaveVisualizerPainter(
@@ -66,8 +60,6 @@ abstract final class VisualizerPainterFactory {
           colorStart: item.colorStart,
           colorEnd: item.colorEnd,
           useGradient: item.useGradient,
-          scale: item.size.width,
-          position: item.position,
         );
     }
   }

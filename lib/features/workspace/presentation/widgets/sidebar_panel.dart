@@ -32,9 +32,9 @@ class SidebarPanel extends ConsumerWidget {
       dialogTitle: 'Add Image Overlay',
     );
     if (result != null && result.files.single.path != null) {
-      ref.read(overlayProvider.notifier).addImage(
-            imagePath: result.files.single.path!,
-          );
+      ref
+          .read(overlayProvider.notifier)
+          .addImage(imagePath: result.files.single.path!);
     }
   }
 
@@ -44,9 +44,9 @@ class SidebarPanel extends ConsumerWidget {
       dialogTitle: 'Set Background Image',
     );
     if (result != null && result.files.single.path != null) {
-      ref.read(overlayProvider.notifier).setBackgroundImage(
-            result.files.single.path!,
-          );
+      ref
+          .read(overlayProvider.notifier)
+          .setBackgroundImage(result.files.single.path!);
     }
   }
 
@@ -64,14 +64,15 @@ class SidebarPanel extends ConsumerWidget {
     if (result != null) {
       final uiConfig = ref.read(uiConfigProvider);
       final overlayState = ref.read(overlayProvider);
-      
-      ref.read(exportProvider.notifier).exportVideo(
+
+      ref
+          .read(exportProvider.notifier)
+          .exportVideo(
             audioPath: audioState.filePath!,
             durationMs: audioState.duration.inMilliseconds,
             config: uiConfig,
             overlayState: overlayState,
             outputPath: result,
-            fftDataAtTime: null, // Placeholder for now
           );
     }
   }
@@ -110,143 +111,213 @@ class SidebarPanel extends ConsumerWidget {
                 Text(
                   'VizXpert',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
           ),
           const Divider(height: 1),
 
-          // ── Import Audio ─────────────────────────────────────────────
-          _SidebarButton(
-            icon: Icons.audio_file_rounded,
-            label: 'Import Audio',
-            onTap: () => _importAudio(ref),
+          // ── Scrollable content ────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Import Audio ──────────────────────────────────────
+                  _SidebarButton(
+                    icon: Icons.audio_file_rounded,
+                    label: 'Import Audio',
+                    onTap: () => _importAudio(ref),
+                  ),
+
+                  // ── Loaded file info ──────────────────────────────────
+                  if (audioState.hasFile)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.panelBorder),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.music_note_rounded,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                audioState.fileName ?? 'Unknown',
+                                style: Theme.of(context).textTheme.bodySmall,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  const Divider(height: 1),
+
+                  // ── Overlay Tools Section ─────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'OVERLAY TOOLS',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+
+                  _SidebarButton(
+                    icon: Icons.text_fields_rounded,
+                    label: 'Add Text',
+                    onTap: () => ref.read(overlayProvider.notifier).addText(),
+                  ),
+                  _SidebarButton(
+                    icon: Icons.add_photo_alternate_rounded,
+                    label: 'Add Image',
+                    onTap: () => _importImage(ref),
+                  ),
+
+                  // Shape submenu
+                  _ShapeMenuButton(
+                    onShapeSelected: (type) => ref
+                        .read(overlayProvider.notifier)
+                        .addShape(shapeType: type),
+                  ),
+
+                  _SidebarButton(
+                    icon: Icons.wallpaper_rounded,
+                    label: 'Background Image',
+                    onTap: () => _setBackgroundImage(ref),
+                  ),
+
+                  const Divider(height: 1),
+
+                  // ── Visualizer Mode ───────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'VISUALIZER MODE',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 16),
+                        _ModeToggle(
+                          selected: VisualizerType.bars,
+                          onChanged: (type) {
+                            ref
+                                .read(overlayProvider.notifier)
+                                .addVisualizer(visualizerType: type);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
 
-          // ── Loaded file info ─────────────────────────────────────────
-          if (audioState.hasFile)
+          // ── Export progress & status (pinned at bottom) ──────────────
+          if (exportState.isExporting)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(16),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: AppColors.panelBorder),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.music_note_rounded,
-                      size: 14,
-                      color: AppColors.primary,
+                    // Phase icon + label
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: const AlwaysStoppedAnimation(
+                              AppColors.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            exportState.statusMessage,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        audioState.fileName ?? 'Unknown',
-                        style: Theme.of(context).textTheme.bodySmall,
-                        overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 10),
+
+                    // Progress bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: exportState.progress,
+                        minHeight: 6,
+                        backgroundColor: AppColors.panelBackground,
+                        valueColor: const AlwaysStoppedAnimation(
+                          AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Overall percentage
+                    Text(
+                      '${(exportState.progress * 100).toInt()}% complete',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.textMuted,
+                        fontSize: 10,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-
-          const Divider(height: 1),
-
-          // ── Overlay Tools Section ─────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'OVERLAY TOOLS',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-
-          _SidebarButton(
-            icon: Icons.text_fields_rounded,
-            label: 'Add Text',
-            onTap: () => ref.read(overlayProvider.notifier).addText(),
-          ),
-          _SidebarButton(
-            icon: Icons.add_photo_alternate_rounded,
-            label: 'Add Image',
-            onTap: () => _importImage(ref),
-          ),
-
-          // Shape submenu
-          _ShapeMenuButton(
-            onShapeSelected: (type) =>
-                ref.read(overlayProvider.notifier).addShape(shapeType: type),
-          ),
-
-          _SidebarButton(
-            icon: Icons.wallpaper_rounded,
-            label: 'Background Image',
-            onTap: () => _setBackgroundImage(ref),
-          ),
-
-          const Divider(height: 1),
-
-          // ── Visualizer Mode ──────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'VISUALIZER MODE',
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-                const SizedBox(height: 16),
-                _ModeToggle(
-                  // Pass a dummy value since selection doesn't make sense anymore
-                  selected: VisualizerType.bars,
-                  onChanged: (type) {
-                    ref.read(overlayProvider.notifier).addVisualizer(visualizerType: type);
-                  },
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // ── Export ────────────────────────────────────────────────────
-          if (exportState.isExporting)
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: exportState.progress,
-                      backgroundColor: AppColors.surface,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    exportState.status == ExportStatus.preparingFrames
-                        ? 'Capturing frames… ${(exportState.progress * 100).toInt()}%'
-                        : 'Encoding video…',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ],
               ),
             )
           else if (exportState.status == ExportStatus.done)
@@ -258,20 +329,88 @@ class SidebarPanel extends ConsumerWidget {
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: AppColors.success.withValues(alpha: 0.3)),
+                    color: AppColors.success.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded,
-                        color: AppColors.success, size: 16),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.success,
+                      size: 16,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Export complete!',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: AppColors.success),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (exportState.status == ExportStatus.error)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: Colors.red,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Export failed',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (exportState.errorMessage != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        exportState.errorMessage!,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.textMuted,
+                          fontSize: 10,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 28,
+                      child: TextButton(
+                        onPressed: () =>
+                            ref.read(exportProvider.notifier).reset(),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        child: const Text(
+                          'Dismiss',
+                          style: TextStyle(fontSize: 11),
+                        ),
                       ),
                     ),
                   ],
@@ -316,7 +455,9 @@ class _SidebarButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         color: accent
-            ? (enabled ? AppColors.primary : AppColors.primary.withValues(alpha: 0.3))
+            ? (enabled
+                  ? AppColors.primary
+                  : AppColors.primary.withValues(alpha: 0.3))
             : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
@@ -329,11 +470,13 @@ class _SidebarButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
-                Icon(icon,
-                    size: 18,
-                    color: accent
-                        ? AppColors.textOnAccent
-                        : AppColors.textSecondary),
+                Icon(
+                  icon,
+                  size: 18,
+                  color: accent
+                      ? AppColors.textOnAccent
+                      : AppColors.textSecondary,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   label,
@@ -342,8 +485,8 @@ class _SidebarButton extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     color: enabled
                         ? (accent
-                            ? AppColors.textOnAccent
-                            : AppColors.textPrimary)
+                              ? AppColors.textOnAccent
+                              : AppColors.textPrimary)
                         : AppColors.textMuted,
                   ),
                 ),
@@ -378,7 +521,11 @@ class _ShapeMenuButton extends StatelessWidget {
               value: ShapeType.rectangle,
               child: Row(
                 children: [
-                  Icon(Icons.crop_square_rounded, size: 16, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.crop_square_rounded,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                   SizedBox(width: 8),
                   Text('Rectangle', style: TextStyle(fontSize: 13)),
                 ],
@@ -388,7 +535,11 @@ class _ShapeMenuButton extends StatelessWidget {
               value: ShapeType.circle,
               child: Row(
                 children: [
-                  Icon(Icons.circle_outlined, size: 16, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.circle_outlined,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                   SizedBox(width: 8),
                   Text('Circle', style: TextStyle(fontSize: 13)),
                 ],
@@ -398,7 +549,11 @@ class _ShapeMenuButton extends StatelessWidget {
               value: ShapeType.triangle,
               child: Row(
                 children: [
-                  Icon(Icons.change_history_rounded, size: 16, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.change_history_rounded,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                   SizedBox(width: 8),
                   Text('Triangle', style: TextStyle(fontSize: 13)),
                 ],
@@ -408,7 +563,11 @@ class _ShapeMenuButton extends StatelessWidget {
               value: ShapeType.line,
               child: Row(
                 children: [
-                  Icon(Icons.horizontal_rule_rounded, size: 16, color: AppColors.textSecondary),
+                  Icon(
+                    Icons.horizontal_rule_rounded,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                   SizedBox(width: 8),
                   Text('Line', style: TextStyle(fontSize: 13)),
                 ],
@@ -419,8 +578,11 @@ class _ShapeMenuButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
-                const Icon(Icons.category_rounded,
-                    size: 18, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.category_rounded,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 10),
                 Text(
                   'Add Shape',
@@ -431,8 +593,11 @@ class _ShapeMenuButton extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.arrow_drop_down,
-                    size: 16, color: AppColors.textMuted),
+                const Icon(
+                  Icons.arrow_drop_down,
+                  size: 16,
+                  color: AppColors.textMuted,
+                ),
               ],
             ),
           ),
@@ -478,29 +643,30 @@ class _ModeToggle extends StatelessWidget {
           onTap: () => onChanged(type),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            height: 60, // Fixed height ensures proper alignment
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.primary.withValues(alpha: 0.2)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(6),
               border: isSelected
-                  ? Border.all(color: AppColors.primary.withValues(alpha: 0.4))
-                  : Border.all(color: Colors.transparent),
+                  ? Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 1)
+                  : Border.all(color: Colors.transparent, width: 1),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   icon,
-                  size: 18,
+                  size: 20,
                   color: isSelected ? AppColors.primary : AppColors.textMuted,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? AppColors.textPrimary
                         : AppColors.textMuted,
@@ -519,21 +685,21 @@ class _ModeToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: const EdgeInsets.all(6.0),
         child: Column(
           children: [
             Row(
               children: [
                 buildItem(VisualizerType.bars),
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 buildItem(VisualizerType.circular),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Row(
               children: [
                 buildItem(VisualizerType.symmetricBars),
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 buildItem(VisualizerType.wave),
               ],
             ),

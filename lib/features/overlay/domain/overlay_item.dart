@@ -24,6 +24,8 @@ class OverlayItem {
     this.zIndex = 0,
     this.isLocked = false,
     this.isVisible = true,
+    this.startTimeMs = 0,
+    this.endTimeMs,
   });
 
   /// Unique identifier (UUID).
@@ -53,6 +55,12 @@ class OverlayItem {
   /// If false, the item is hidden on canvas and in export.
   final bool isVisible;
 
+  /// Start time in milliseconds on the timeline (0 = beginning).
+  final int startTimeMs;
+
+  /// End time in milliseconds on the timeline (null = full duration).
+  final int? endTimeMs;
+
   /// Convenience: absolute rect given a canvas [canvasSize].
   Rect absoluteRect(Size canvasSize) {
     return Rect.fromLTWH(
@@ -73,6 +81,8 @@ class OverlayItem {
     int? zIndex,
     bool? isLocked,
     bool? isVisible,
+    int? startTimeMs,
+    int? endTimeMs,
   }) {
     return OverlayItem(
       id: id ?? this.id,
@@ -84,6 +94,8 @@ class OverlayItem {
       zIndex: zIndex ?? this.zIndex,
       isLocked: isLocked ?? this.isLocked,
       isVisible: isVisible ?? this.isVisible,
+      startTimeMs: startTimeMs ?? this.startTimeMs,
+      endTimeMs: endTimeMs ?? this.endTimeMs,
     );
   }
 }

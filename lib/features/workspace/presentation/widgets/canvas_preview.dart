@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../audio_processing/providers/audio_provider.dart';
 import '../../../audio_processing/providers/fft_provider.dart';
 import '../../../overlay/application/image_cache_service.dart';
 import '../../../overlay/domain/overlay_item.dart';
@@ -143,7 +144,9 @@ class _CanvasPreviewState extends ConsumerState<CanvasPreview>
                             canvasSize: canvasSize,
                             selectedItemId: null, // handles drawn by widgets
                             fftBars: fftState.bars,
-                            timeInSeconds: _rotationAngle * 10.0, // _rotationAngle is driven by ticker, *10 to approximate time
+                            timeInSeconds: _rotationAngle * 10.0,
+                            currentTimeMs: ref.watch(audioProvider).position.inMilliseconds,
+                            totalDurationMs: ref.watch(audioProvider).duration.inMilliseconds,
                           ),
                           size: Size.infinite,
                         ),
@@ -151,7 +154,15 @@ class _CanvasPreviewState extends ConsumerState<CanvasPreview>
 
                       // ── Layer 3: Interactive drag handles ────────
                       ...overlayState.sortedItems
-                          .where((item) => item.isVisible)
+                          .where((item) {
+                            if (!item.isVisible) return false;
+                            final audioState = ref.watch(audioProvider);
+                            final currentMs = audioState.position.inMilliseconds;
+                            final totalMs = audioState.duration.inMilliseconds;
+                            if (totalMs <= 0) return true; // No audio loaded, show all
+                            final endMs = item.endTimeMs ?? totalMs;
+                            return currentMs >= item.startTimeMs && currentMs <= endMs;
+                          })
                           .map(
                             (item) => DraggableOverlay(
                               key: ValueKey(item.id),

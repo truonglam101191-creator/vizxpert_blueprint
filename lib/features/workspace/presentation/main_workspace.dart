@@ -58,21 +58,28 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () {
-          setState(() => _layoutConfig = _layoutConfig.copyWith(
-                showSidebar: !_layoutConfig.showSidebar,
-              ));
+          setState(
+            () => _layoutConfig = _layoutConfig.copyWith(
+              showSidebar: !_layoutConfig.showSidebar,
+            ),
+          );
         },
         const SingleActivator(LogicalKeyboardKey.digit2, meta: true): () {
-          setState(() => _layoutConfig = _layoutConfig.copyWith(
-                showProperties: !_layoutConfig.showProperties,
-              ));
+          setState(
+            () => _layoutConfig = _layoutConfig.copyWith(
+              showProperties: !_layoutConfig.showProperties,
+            ),
+          );
         },
         const SingleActivator(LogicalKeyboardKey.digit3, meta: true): () {
-          setState(() => _layoutConfig = _layoutConfig.copyWith(
-                showTimeline: !_layoutConfig.showTimeline,
-              ));
+          setState(
+            () => _layoutConfig = _layoutConfig.copyWith(
+              showTimeline: !_layoutConfig.showTimeline,
+            ),
+          );
         },
-        const SingleActivator(LogicalKeyboardKey.digit0, meta: true): _resetLayout,
+        const SingleActivator(LogicalKeyboardKey.digit0, meta: true):
+            _resetLayout,
       },
       child: Focus(
         autofocus: true,
@@ -102,11 +109,11 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
                       _VerticalResizeHandle(
                         onDrag: (dx) => setState(() {
                           _layoutConfig = _layoutConfig.copyWith(
-                            sidebarWidth:
-                                (_layoutConfig.sidebarWidth + dx).clamp(
-                              AppConstants.sidebarMinWidth,
-                              AppConstants.sidebarMaxWidth,
-                            ),
+                            sidebarWidth: (_layoutConfig.sidebarWidth + dx)
+                                .clamp(
+                                  AppConstants.sidebarMinWidth,
+                                  AppConstants.sidebarMaxWidth,
+                                ),
                           );
                         }),
                       ),
@@ -122,9 +129,9 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
                           _layoutConfig = _layoutConfig.copyWith(
                             propertiesWidth:
                                 (_layoutConfig.propertiesWidth - dx).clamp(
-                              AppConstants.propertiesMinWidth,
-                              AppConstants.propertiesMaxWidth,
-                            ),
+                                  AppConstants.propertiesMinWidth,
+                                  AppConstants.propertiesMaxWidth,
+                                ),
                           );
                         }),
                       ),
@@ -143,8 +150,7 @@ class _MainWorkspaceState extends ConsumerState<MainWorkspace>
                 _HorizontalResizeHandle(
                   onDrag: (dy) => setState(() {
                     _layoutConfig = _layoutConfig.copyWith(
-                      timelineHeight:
-                          (_layoutConfig.timelineHeight - dy).clamp(
+                      timelineHeight: (_layoutConfig.timelineHeight - dy).clamp(
                         AppConstants.timelineMinHeight,
                         AppConstants.timelineMaxHeight,
                       ),

@@ -16,8 +16,6 @@ class CircularVisualizerPainter extends CustomPainter {
     required this.colorEnd,
     required this.useGradient,
     this.rotationAngle = 0.0,
-    this.scale = 1.0,
-    this.position = Offset.zero,
   });
 
   final List<double> fftBars;
@@ -25,18 +23,12 @@ class CircularVisualizerPainter extends CustomPainter {
   final Color colorEnd;
   final bool useGradient;
   final double rotationAngle;
-  final double scale;
-  final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (fftBars.isEmpty) return;
 
     canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.scale(scale);
-    canvas.translate(position.dx * size.width, position.dy * size.height);
-    canvas.translate(-size.width / 2, -size.height / 2);
 
     // ── Build mirrored data for seamless circle ─────────────────────
     final mirroredBars = [...fftBars.sublist(1).reversed, ...fftBars];

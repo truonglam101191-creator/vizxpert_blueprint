@@ -121,9 +121,17 @@ class OverlayNotifier extends Notifier<OverlayState> {
   }
 
   void addVisualizer({VisualizerType visualizerType = VisualizerType.bars}) {
+    Size defaultSize;
+    if (visualizerType == VisualizerType.circular) {
+      defaultSize = const Size(0.5, 0.5); // Square for circular
+    } else {
+      defaultSize = const Size(0.8, 0.3); // Wide for bars/waves
+    }
+
     final item = VisualizerOverlay(
       id: _generateId(),
       visualizerType: visualizerType,
+      size: defaultSize,
       zIndex: _nextZIndex(),
     );
     state = state.copyWith(
@@ -206,6 +214,13 @@ class OverlayNotifier extends Notifier<OverlayState> {
 
   void toggleLock(String id) {
     updateItem(id, (item) => item.copyWith(isLocked: !item.isLocked));
+  }
+
+  void updateTimeRange(String id, {int? startTimeMs, int? endTimeMs}) {
+    updateItem(id, (item) => item.copyWith(
+      startTimeMs: startTimeMs,
+      endTimeMs: endTimeMs,
+    ));
   }
 
   // ── Layer ordering ─────────────────────────────────────────────────

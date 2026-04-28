@@ -15,16 +15,12 @@ class BarVisualizerPainter extends CustomPainter {
     required this.colorStart,
     required this.colorEnd,
     required this.useGradient,
-    this.scale = 1.0,
-    this.position = Offset.zero,
   });
 
   final List<double> fftBars;
   final Color colorStart;
   final Color colorEnd;
   final bool useGradient;
-  final double scale;
-  final Offset position;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -32,16 +28,6 @@ class BarVisualizerPainter extends CustomPainter {
 
     // ── APPLY TRANSFORMATIONS ──────────────────────────────────────
     canvas.save();
-
-    final absPosition = Offset(
-      position.dx * size.width,
-      position.dy * size.height,
-    );
-    canvas.translate(absPosition.dx, absPosition.dy);
-    final pivot = Offset(size.width / 2, size.height / 2);
-    canvas.translate(pivot.dx, pivot.dy);
-    canvas.scale(scale);
-    canvas.translate(-pivot.dx, -pivot.dy);
 
     // ── DRAW BARS ──────────────────────────────────────────────────
     // Left side = reversed FFT (without index 0)

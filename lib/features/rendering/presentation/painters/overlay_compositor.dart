@@ -22,6 +22,8 @@ class OverlayCompositorPainter extends CustomPainter {
     this.selectedItemId,
     this.fftBars = const [],
     this.timeInSeconds = 0.0,
+    this.currentTimeMs = 0,
+    this.totalDurationMs = 0,
   });
 
   final List<OverlayItem> overlayItems;
@@ -29,6 +31,12 @@ class OverlayCompositorPainter extends CustomPainter {
   final String? selectedItemId;
   final List<double> fftBars;
   final double timeInSeconds;
+
+  /// Current playback position in milliseconds – used to show/hide items.
+  final int currentTimeMs;
+
+  /// Total audio duration in milliseconds – used to resolve null endTimeMs.
+  final int totalDurationMs;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -38,6 +46,12 @@ class OverlayCompositorPainter extends CustomPainter {
 
     for (final item in sorted) {
       if (!item.isVisible) continue;
+
+      // ── Time-range visibility check ─────────────────────────────
+      final endMs = item.endTimeMs ?? totalDurationMs;
+      if (totalDurationMs > 0 && (currentTimeMs < item.startTimeMs || currentTimeMs > endMs)) {
+        continue;
+      }
 
       canvas.save();
 
@@ -346,30 +360,15 @@ class OverlayCompositorPainter extends CustomPainter {
     VisualizerOverlay item,
     Rect rect,
   ) {
-    // Reverse the parent translation/scale because VisualizerPainters apply their own
-    // transforms internally based on item.position and item.scale!
-    final center = rect.center;
-    // We already translated by center and applied rotation.
-    // However, the VisualizerPainters expect the canvas to be un-translated, 
-    // and they use `position` inside their own `paint` method.
-    // Wait! The previous translation was applied in `paint()` around line 43.
-    // `rect.center` was calculated based on `item.absoluteRect(size)`.
-    
-    // Actually, it's easier to just let VisualizerPainter draw from (0,0) with scale 1.0, 
-    // and let the compositor handle the transforms. 
-    // But VisualizerPainter currently explicitly does:
-    // `canvas.translate(position.dx * size.width, position.dy * size.height)`
-    // So we need to reverse the translation done by the compositor!
-    
-    canvas.restore(); // Undo the `canvas.save()` done in line 37!
-    canvas.save(); // Save again so we don't mess up other overlays
-    
-    // Now canvas is clean (except for global transforms, if any).
+    // Translate to the bounding box's top-left corner
+    canvas.translate(rect.left, rect.top);
+
     final painter = VisualizerPainterFactory.create(
       item: item,
       fftBars: fftBars,
       timeInSeconds: timeInSeconds,
     );
-    painter.paint(canvas, size);
+    // Let the visualizer paint strictly within its own bounding box (rect.size)
+    painter.paint(canvas, rect.size);
   }
 }
